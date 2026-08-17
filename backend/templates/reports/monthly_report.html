@@ -1,0 +1,272 @@
+<!-- This is total generated using LLM -->
+
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title> Monthly Placement Report</title>
+</head>
+
+<body style="margin:0;padding:0;background:#f4f6f8;font-family:'Segoe UI',Arial,sans-serif;">
+
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f6f8;">
+        <tr>
+            <td align="center" style="padding:30px 15px;">
+
+                <table role="presentation" width="650" cellpadding="0" cellspacing="0"
+                    style="background:#ffffff;border-radius:8px;overflow:hidden;">
+
+                    <!-- Header -->
+                    <tr>
+                        <td style="
+                            background:#1e40af;
+                            padding:32px 40px;
+                            text-align:center;
+                        ">
+                            <h1 style="
+                                margin:0;
+                                color:#ffffff;
+                                font-size:26px;
+                                font-weight:700;
+                            ">
+                                Monthly Placement Report
+                            </h1>
+
+                            <p style="
+                                margin:8px 0 0;
+                                color:#dbeafe;
+                                font-size:14px;
+                            ">
+                                {{ report_period }}
+                            </p>
+                        </td>
+                    </tr>
+
+                    <!-- Summary Section -->
+                    <tr>
+                        <td style="padding:32px 40px 20px;">
+
+                            <h2 style="
+                                margin:0 0 18px;
+                                color:#1f2937;
+                                font-size:18px;
+                            ">
+                                Summary Statistics
+                            </h2>
+
+                            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="
+                                border:1px solid #e5e7eb;
+                                border-radius:6px;
+                            ">
+                                <tr>
+                                    <td style="
+                                        padding:14px 18px;
+                                        border-bottom:1px solid #e5e7eb;
+                                        color:#4b5563;
+                                    ">
+                                        Total Drives Conducted
+                                    </td>
+
+                                    <td style="
+                                        padding:14px 18px;
+                                        border-bottom:1px solid #e5e7eb;
+                                        text-align:right;
+                                        font-weight:700;
+                                        color:#1e40af;
+                                    ">
+                                        {{ drives_conducted }}
+                                    </td>
+                                </tr>
+
+                                <tr>
+                                    <td style="
+                                        padding:14px 18px;
+                                        border-bottom:1px solid #e5e7eb;
+                                        color:#4b5563;
+                                    ">
+                                        Total Applications
+                                    </td>
+
+                                    <td style="
+                                        padding:14px 18px;
+                                        border-bottom:1px solid #e5e7eb;
+                                        text-align:right;
+                                        font-weight:700;
+                                        color:#1e40af;
+                                    ">
+                                        {{ total_applications }}
+                                    </td>
+                                </tr>
+
+                                <tr>
+                                    <td style="
+                                        padding:14px 18px;
+                                        border-bottom:1px solid #e5e7eb;
+                                        color:#4b5563;
+                                    ">
+                                        Students Selected
+                                    </td>
+
+                                    <td style="
+                                        padding:14px 18px;
+                                        border-bottom:1px solid #e5e7eb;
+                                        text-align:right;
+                                        font-weight:700;
+                                        color:#16a34a;
+                                    ">
+                                        {{ students_selected }}
+                                    </td>
+                                </tr>
+
+                                <tr>
+                                    <td style="
+                                        padding:14px 18px;
+                                        color:#4b5563;
+                                    ">
+                                        Students Placed
+                                    </td>
+
+                                    <td style="
+                                        padding:14px 18px;
+                                        text-align:right;
+                                        font-weight:700;
+                                        color:#0891b2;
+                                    ">
+                                        {{ total_placements }}
+                                    </td>
+                                </tr>
+                            </table>
+
+                        </td>
+                    </tr>
+
+                    <!-- Top Recruiters -->
+                    <tr>
+                        <td style="padding:10px 40px 30px;">
+
+                            <h2 style="
+                                margin:0 0 18px;
+                                color:#1f2937;
+                                font-size:18px;
+                            ">
+                                Top Recruiting Companies
+                            </h2>
+
+                            {% if top_companies %}
+
+                            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="
+                                border:1px solid #e5e7eb;
+                                border-radius:6px;
+                            ">
+
+                                <tr style="background:#f9fafb;">
+                                    <th style="
+                                        padding:12px 16px;
+                                        text-align:left;
+                                        color:#6b7280;
+                                        font-size:12px;
+                                    ">
+                                        #
+                                    </th>
+
+                                    <th style="
+                                        padding:12px 16px;
+                                        text-align:left;
+                                        color:#6b7280;
+                                        font-size:12px;
+                                    ">
+                                        Company
+                                    </th>
+
+                                    <th style="
+                                        padding:12px 16px;
+                                        text-align:right;
+                                        color:#6b7280;
+                                        font-size:12px;
+                                    ">
+                                        Placements
+                                    </th>
+                                </tr>
+
+                                {% for company in top_companies %}
+                                <tr>
+                                    <td style="
+                                        padding:12px 16px;
+                                        border-top:1px solid #e5e7eb;
+                                        color:#6b7280;
+                                    ">
+                                        {{ loop.index }}
+                                    </td>
+
+                                    <td style="
+                                        padding:12px 16px;
+                                        border-top:1px solid #e5e7eb;
+                                        color:#1f2937;
+                                        font-weight:600;
+                                    ">
+                                        {{ company.name }}
+                                    </td>
+
+                                    <td style="
+                                        padding:12px 16px;
+                                        border-top:1px solid #e5e7eb;
+                                        text-align:right;
+                                        color:#1e40af;
+                                        font-weight:700;
+                                    ">
+                                        {{ company.placements }}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+
+                            </table>
+
+                            {% else %}
+
+                            <p style="
+                                margin:0;
+                                padding:20px;
+                                text-align:center;
+                                color:#6b7280;
+                                background:#f9fafb;
+                                border:1px solid #e5e7eb;
+                                border-radius:6px;
+                            ">
+                                No placement data available for this period.
+                            </p>
+
+                            {% endif %}
+
+                        </td>
+                    </tr>
+
+                    <!-- Footer -->
+                    <tr>
+                        <td style="
+                            padding:20px 40px;
+                            text-align:center;
+                            border-top:1px solid #e5e7eb;
+                            background:#fafafa;
+                        ">
+                            <p style="
+                                margin:0;
+                                font-size:12px;
+                                color:#6b7280;
+                                line-height:1.6;
+                            ">
+                                Generated automatically by the Placement Portal Application.
+                            </p>
+                        </td>
+                    </tr>
+
+                </table>
+
+            </td>
+        </tr>
+    </table>
+
+</body>
+
+</html>

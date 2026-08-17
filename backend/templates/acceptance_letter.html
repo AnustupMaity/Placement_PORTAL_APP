@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Letter of Acceptance</title>
+    <style>
+        @page {
+            size: a4 portrait;
+            margin: 1.5cm;
+        }
+
+        body {
+            font-family: Helvetica, Arial, sans-serif;
+            font-size: 10pt;
+            line-height: 1.45;
+            color: #1a202c;
+            margin: 0;
+            padding: 0;
+        }
+
+        .header-table {
+            width: 100%;
+            border-bottom: 2px solid #276749;
+            padding-bottom: 12px;
+            margin-bottom: 20px;
+        }
+
+        .doc-title {
+            font-size: 18pt;
+            font-weight: bold;
+            color: #276749;
+            margin: 0;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .doc-subtitle {
+            font-size: 8.5pt;
+            color: #4a5568;
+            margin-top: 3px;
+        }
+
+        .doc-badge {
+            text-align: right;
+            font-size: 9pt;
+            font-weight: bold;
+            color: #276749;
+            text-transform: uppercase;
+        }
+
+        .meta-table {
+            width: 100%;
+            margin-bottom: 18px;
+            font-size: 9.5pt;
+        }
+
+        .meta-label {
+            font-weight: bold;
+            color: #4a5568;
+            width: 100px;
+        }
+
+        .recipient-box {
+            background-color: #f7fafc;
+            border-left: 3px solid #276749;
+            padding: 8px 12px;
+            margin-bottom: 15px;
+            font-size: 9.5pt;
+        }
+
+        p {
+            margin: 0 0 10px 0;
+            text-align: justify;
+        }
+
+        .summary-box {
+            width: 100%;
+            margin: 15px 0;
+            border: 1px solid #cbd5e0;
+            background-color: #f7fafc;
+            border-collapse: collapse;
+        }
+
+        .summary-box th {
+            background-color: #f0fff4;
+            color: #276749;
+            font-size: 9.5pt;
+            font-weight: bold;
+            padding: 8px 12px;
+            text-align: left;
+            border-bottom: 1px solid #cbd5e0;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .summary-box td {
+            padding: 7px 12px;
+            font-size: 9.5pt;
+            border-bottom: 1px solid #edf2f7;
+        }
+
+        .summary-box tr:last-child td {
+            border-bottom: none;
+        }
+
+        .summary-label {
+            width: 38%;
+            font-weight: bold;
+            color: #4a5568;
+        }
+
+        .summary-value {
+            width: 62%;
+            color: #1a202c;
+        }
+
+        .declaration-box {
+            border: 1px solid #c6f6d5;
+            background-color: #f0fff4;
+            padding: 10px 12px;
+            margin: 12px 0 16px 0;
+            font-size: 9pt;
+            color: #22543d;
+            border-radius: 4px;
+        }
+
+        .signature-table {
+            width: 100%;
+            margin-top: 25px;
+            page-break-inside: avoid;
+        }
+
+        .signature-cell {
+            width: 50%;
+            vertical-align: bottom;
+        }
+
+        .sig-container {
+            min-height: 50px;
+            margin-bottom: 5px;
+        }
+
+        .sig-img {
+            max-height: 48px;
+            max-width: 170px;
+        }
+
+        .sig-line {
+            border-top: 1px solid #718096;
+            width: 200px;
+            margin-top: 4px;
+            margin-bottom: 4px;
+        }
+
+        .sig-name {
+            font-size: 9.5pt;
+            font-weight: bold;
+            color: #1a202c;
+        }
+
+        .sig-title {
+            font-size: 8.5pt;
+            color: #718096;
+        }
+
+        .footer-note {
+            margin-top: 25px;
+            padding-top: 10px;
+            border-top: 1px dashed #cbd5e0;
+            font-size: 7.5pt;
+            color: #718096;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header Letterhead -->
+    <table class="header-table">
+        <tr>
+            <td style="width: 65%;">
+                <div class="doc-title">Letter of Acceptance</div>
+                <div class="doc-subtitle">Formal Digital Acceptance of Campus Employment Offer</div>
+            </td>
+            <td style="width: 35%; vertical-align: top;" class="doc-badge">
+                SIGNED & ACCEPTED<br>
+                <span style="font-size: 8pt; font-weight: normal; color: #718096;">Record: ACC-{{ placement.id }}</span>
+            </td>
+        </tr>
+    </table>
+
+    <!-- Recipient -->
+    <div class="recipient-box">
+        <strong>To:</strong><br>
+        Talent Acquisition & Human Resources<br>
+        <strong>{{ company_name }}</strong>
+    </div>
+
+    <!-- Metadata -->
+    <table class="meta-table">
+        <tr>
+            <td class="meta-label">Date of Acceptance:</td>
+            <td><strong>{{ accepted_date }}</strong></td>
+            <td class="meta-label" style="text-align: right;">Candidate Roll No:</td>
+            <td style="text-align: right;">{{ student_roll }}</td>
+        </tr>
+        <tr>
+            <td class="meta-label">Candidate Name:</td>
+            <td><strong>{{ student_name }}</strong></td>
+            <td class="meta-label" style="text-align: right;">Academic Branch:</td>
+            <td style="text-align: right;">{{ student_branch }}</td>
+        </tr>
+    </table>
+
+    <p>Dear Hiring Team,</p>
+
+    <p>
+        I am writing to formally confirm my acceptance of the employment offer extended by <strong>{{ company_name }}</strong> for the position of <strong>{{ placement.position }}</strong>.
+    </p>
+    <p>
+        I sincerely appreciate the confidence your selection panel has placed in me. I am enthusiastic about the opportunity to contribute effectively to the organization.
+    </p>
+
+    <!-- Placement Confirmation Table -->
+    <table class="summary-box">
+        <tr>
+            <th colspan="2">Confirmed Offer Particulars</th>
+        </tr>
+        <tr>
+            <td class="summary-label">Candidate Full Name</td>
+            <td class="summary-value"><strong>{{ student_name }}</strong></td>
+        </tr>
+        <tr>
+            <td class="summary-label">Appointed Designation</td>
+            <td class="summary-value"><strong>{{ placement.position }}</strong></td>
+        </tr>
+        <tr>
+            <td class="summary-label">Offered Compensation (CTC)</td>
+            <td class="summary-value" style="color: #276749; font-weight: bold;">{{ placement.salary or 'As agreed in offer' }}</td>
+        </tr>
+        <tr>
+            <td class="summary-label">Acceptance Timestamp</td>
+            <td class="summary-value">{{ accepted_date }}</td>
+        </tr>
+    </table>
+
+    <div class="declaration-box">
+        <strong>Candidate Confirmation & Declaration:</strong><br>
+        I hereby confirm that I have reviewed the terms, responsibilities, and conditions set forth in the official Offer Letter. I commit to fulfilling the academic requirements of my degree program and completing the necessary onboarding procedures upon joining.
+    </div>
+
+    <p>
+        Thank you once again for this opportunity. I look forward to beginning my professional journey with <strong>{{ company_name }}</strong>.
+    </p>
+
+    <!-- Signatures -->
+    <table class="signature-table">
+        <tr>
+            <td style="width: 50%; vertical-align: bottom;">
+                <div class="sig-container">
+                    {% if student_signature %}
+                    <img src="{{ student_signature }}" class="sig-img" alt="Student Signature" />
+                    {% else %}
+                    <div style="font-size: 8pt; color: #718096; font-style: italic; padding-top: 15px;">
+                        [Digitally Verified Signature]
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="sig-line"></div>
+                <div class="sig-name">{{ student_name }}</div>
+                <div class="sig-title">Candidate Signature &bull; {{ student_roll }}</div>
+            </td>
+            <td style="width: 50%; vertical-align: bottom; text-align: right;">
+                <div class="sig-container" style="padding-top: 25px;">
+                    <span style="font-size: 8pt; color: #276749; font-weight: bold; border: 1px solid #c6f6d5; background: #f0fff4; padding: 4px 8px;">
+                        VERIFIED BY PLACEMENT PORTAL
+                    </span>
+                </div>
+                <div class="sig-line" style="margin-left: auto;"></div>
+                <div class="sig-name">Campus Placement Cell</div>
+                <div class="sig-title">Official Digital Repository</div>
+            </td>
+        </tr>
+    </table>
+
+    <div class="footer-note">
+        This document constitutes an electronic record and digital acceptance generated via the Placement Portal Application.
+    </div>
+
+</body>
+</html>

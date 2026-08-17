@@ -1,0 +1,17 @@
+{
+  "name": "Placement Portal Application",
+  "short_name": "PPA",
+  "description": "Placement Portal Application.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#ffffff",
+  "icons": [
+    {
+      "src": "/frontend/static/icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
