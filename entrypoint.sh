@@ -1,33 +1,36 @@
-#!/bin/sh
+#!/bin/bash
 set -e
 
 echo "=== Starting Placement Portal Application ==="
 
+# Set Celery working directory to backend
+BACKEND_DIR="/app/backend"
+
 # Check if Redis URL is configured
 if [ -n "$REDIS_URL" ] || [ -n "$CELERY_BROKER_URL" ]; then
     echo "Starting Celery Worker in background..."
-    celery -A app.celery worker --loglevel=info --concurrency=2 &
+    celery -A app.celery --workdir "$BACKEND_DIR" worker --loglevel=info --concurrency=2 &
     WORKER_PID=$!
 
     echo "Starting Celery Beat Scheduler in background..."
-    celery -A app.celery beat --loglevel=info &
+    celery -A app.celery --workdir "$BACKEND_DIR" beat --loglevel=info &
     BEAT_PID=$!
 else
     echo "Notice: REDIS_URL not provided. Celery worker/beat skipped."
 fi
 
-# Trap termination signals to gracefully shutdown background jobs
+# Trap termination signals (INT TERM) for graceful container shutdown
 cleanup() {
     echo "Caught shutdown signal. Stopping Celery processes..."
-    if [ -n "$WORKER_PID" ]; then kill -TERM "$WORKER_PID" 2>/dev/null || true; fi
-    if [ -n "$BEAT_PID" ]; then kill -TERM "$BEAT_PID" 2>/dev/null || true; fi
+    if [ -n "$WORKER_PID" ]; then kill "$WORKER_PID" 2>/dev/null || true; fi
+    if [ -n "$BEAT_PID" ]; then kill "$BEAT_PID" 2>/dev/null || true; fi
     exit 0
 }
-trap cleanup SIGINT SIGTERM
+trap cleanup INT TERM
 
-echo "Starting Gunicorn Web Server..."
+echo "Starting Gunicorn Web Server on port ${PORT:-5000}..."
 PORT="${PORT:-5000}"
-exec gunicorn --chdir backend "app:create_app()" \
+exec gunicorn --chdir "$BACKEND_DIR" "app:create_app()" \
     --bind "0.0.0.0:${PORT}" \
     --workers 2 \
     --threads 2 \
