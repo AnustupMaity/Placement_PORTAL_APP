@@ -2,6 +2,7 @@
 set -e
 
 echo "=== Starting Placement Portal Application ==="
+export EVENTLET_NO_GREENDNS="yes"
 
 # Set Celery working directory to backend
 BACKEND_DIR="/app/backend"

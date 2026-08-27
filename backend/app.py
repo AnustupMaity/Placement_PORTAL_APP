@@ -1,9 +1,6 @@
 #py app.py
 
 import os
-os.environ["EVENTLET_NO_GREENDNS"] = "yes"
-import eventlet
-eventlet.monkey_patch()
 from dotenv import load_dotenv
 
 # Load environment variables from .env file
