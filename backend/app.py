@@ -138,10 +138,12 @@ def _migrate_db_columns():
 
         if inspector.has_table('company_profiles'):
             add_column_if_not_exists('company_profiles', 'signature_path', 'VARCHAR(500)')
+            add_column_if_not_exists('company_profiles', 'offer_template', 'TEXT')
 
         if inspector.has_table('student_profiles'):
             add_column_if_not_exists('student_profiles', 'signature_path', 'VARCHAR(500)')
             add_column_if_not_exists('student_profiles', 'profile_image_url', 'VARCHAR(500)')
+            add_column_if_not_exists('student_profiles', 'cgpa', 'FLOAT')
             add_column_if_not_exists('student_profiles', 'projects', 'TEXT')
             add_column_if_not_exists('student_profiles', 'experience', 'TEXT')
 

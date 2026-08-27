@@ -16,6 +16,7 @@ class StudentProfile(db.Model):#std site with std role
     roll_number = Column(String(50), unique=True)
     branch = Column(String(100))
     year = Column(Integer)  # passout
+    cgpa = Column(Float)
     skills = Column(Text)  # use ,, 
     projects = Column(Text, nullable=True) # JSON or text list of projects
     experience = Column(Text, nullable=True) # Internships/Work Exp
