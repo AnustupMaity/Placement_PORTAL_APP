@@ -1,6 +1,13 @@
 #py app.py
 
 import os
+import eventlet
+eventlet.monkey_patch()
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
+
 import sys
 from flask import Flask, jsonify, send_from_directory
 from flask_cors import CORS
