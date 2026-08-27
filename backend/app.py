@@ -141,8 +141,15 @@ def _migrate_db_columns():
 
         if inspector.has_table('student_profiles'):
             add_column_if_not_exists('student_profiles', 'signature_path', 'VARCHAR(500)')
+            add_column_if_not_exists('student_profiles', 'profile_image_url', 'VARCHAR(500)')
             add_column_if_not_exists('student_profiles', 'projects', 'TEXT')
             add_column_if_not_exists('student_profiles', 'experience', 'TEXT')
+
+        if inspector.has_table('applications'):
+            add_column_if_not_exists('applications', 'test_link', 'VARCHAR(500)')
+            add_column_if_not_exists('applications', 'test_scheduled', 'TIMESTAMP')
+            add_column_if_not_exists('applications', 'interview_link', 'VARCHAR(500)')
+            add_column_if_not_exists('applications', 'interview_scheduled', 'TIMESTAMP')
 
         if inspector.has_table('users'):
             add_column_if_not_exists('users', 'institute_name', 'VARCHAR(200)')
