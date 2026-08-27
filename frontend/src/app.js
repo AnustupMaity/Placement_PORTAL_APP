@@ -29,8 +29,9 @@ if (!window.PPA) {
     },
   };
 
-  // path of pages
-  window.PPA.loadComponent = (path) => loadModule('/frontend/src/components/' + path, options);
+  // path of pages, with cache buster
+  const appVersion = new Date().getTime(); // Force fresh components on load
+  window.PPA.loadComponent = (path) => loadModule('/frontend/src/components/' + path + '?v=' + appVersion, options);
 
   // API Rules
 

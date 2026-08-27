@@ -1,6 +1,6 @@
 //took help of chat gpt
 // this sw is for pwa
-const CACHE_NAME = 'cache';
+const CACHE_NAME = 'cache-v2';
 const ASSETS_TO_CACHE = [
   '/',
   '/manifest.json',
