@@ -65,7 +65,24 @@ The platform features modern authentication (**JWT + Google OAuth**), **digital 
 - **Admin Escalation**: When shortlisting, companies can choose to automatically notify the Admin (TPO) to keep the institution in the loop.
 - **Notification Center**: A live "bell" icon in the navbar tracks unread alerts across all roles (e.g., Offers, Interview Invites, Application Status Updates).
 
-### 🏛️ 6. Institute Settings configuration
+### 🤖 6. AI-Powered Features (Local NLP & OpenRouter)
+- **AI Matchmaking & Scoring**: Uses local NLP (`scikit-learn` TF-IDF Vectorizer & Cosine Similarity) to match student resumes against Job Descriptions, yielding an instant 0-100% Match Score for companies.
+- **AI Mock Interviewer**: Integrates with OpenRouter (Llama 3/Gemini) to conduct chat-based Technical or HR mock interviews directly in the student portal.
+- **AI Resume Gap Analysis**: AI evaluates a student's profile against a drive's job description and gives 3 highly actionable tips on what skills they are missing.
+- **Portal Support Bot**: A floating AI chatbot globally available to help users navigate the platform and answer common queries.
+
+### 🌐 7. WebSockets (Real-Time Live Chat)
+- Implementation of **Flask-SocketIO** enables instant, real-time messaging between students, recruiters, and the TPO.
+- See who's online and instantly receive new messages without refreshing.
+
+### 📄 8. Automated PDF Resume Builder
+- The platform takes a student's profile data (Education, Skills, Projects, Experience, CGPA) and **automatically generates a beautifully formatted, standardized PDF resume**.
+- Companies can download this standardized resume directly, saving time and creating a level playing field.
+
+### 📅 9. Calendar Integration (.ics)
+- When a company schedules an interview or test, an `.ics` calendar file is automatically generated and attached to the email invite, allowing candidates to add it to Google Calendar/Outlook with one click.
+
+### 🏛️ 10. Institute Settings Configuration
 - Administrators can now personalize the portal through the **Institute Settings** profile page.
 - Manage global **Institute Name**, **Institute Address**, and upload an **Institute Logo** that is dynamically reflected across the app.
 
@@ -80,6 +97,8 @@ The platform features modern authentication (**JWT + Google OAuth**), **digital 
 | **Frontend Framework** | Vue.js 3 & Vue Router 4 | Reactive Single Page Application (SPA) |
 | **SFC Dynamic Loader** | `vue3-sfc-loader` | In-browser dynamic runtime compilation of `.vue` files without heavy Node.js build steps |
 | **Styling & UI** | Vanilla CSS3, Bootstrap 5.3, Bootstrap Icons | Custom design system with glassmorphism, gradients, and micro-interactions |
+| **Real-Time Engine**| Flask-SocketIO & Eventlet | WebSocket support for Live Chat |
+| **AI Integration** | `scikit-learn` & OpenRouter API | Local TF-IDF for resume matching, LLMs for mock interviews/gap analysis |
 | **PDF Generation** | `xhtml2pdf` | Server-side HTML-to-PDF rendering with embedded Base64 signatures |
 | **Task Queue & Broker** | Celery 5.x & Redis | Background job processing, scheduled emails, and caching |
 
@@ -167,10 +186,15 @@ When you deploy or fork this application, you can set your own unique Administra
 - `PPA_ADMIN_EMAIL` (Default: `admin@ppa.com`)
 - `PPA_ADMIN_PASSWORD` (Default: `admin123`)
 
+**Environment Variables for AI Features:**
+- `OPENROUTER_API_KEY`: Required for the Mock Interviewer, Support Bot, and Resume Gap Analysis. Get a free key at [OpenRouter](https://openrouter.ai/).
+- `GEMINI_API_KEY`: (Optional) Used as a seamless fallback if OpenRouter is down or hits rate limits. Get a key at Google AI Studio.
+
 **Example (Linux/macOS):**
 ```bash
 export PPA_ADMIN_USER="director"
 export PPA_ADMIN_PASSWORD="SecurePassword2026!"
+export OPENROUTER_API_KEY="sk-or-v1-..."
 python backend/app.py
 ```
 

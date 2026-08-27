@@ -133,6 +133,16 @@ def dashboard():
             db.session.query(Application.drive_id).filter_by(student_id=student.id)
         )
     ).count()
+    
+    # Advanced Analytics
+    conversion_rate = 0
+    if total_applications > 0:
+        conversion_rate = round((selected_count / total_applications) * 100, 1)
+        
+    from sqlalchemy import func
+    from models.placement import Placement
+    avg_placed_cgpa_query = db.session.query(func.avg(StudentProfile.cgpa)).join(Placement, StudentProfile.id == Placement.student_id).scalar()
+    avg_placed_cgpa = round(float(avg_placed_cgpa_query), 2) if avg_placed_cgpa_query else 0
 
     return jsonify({
         'student': {
@@ -148,7 +158,9 @@ def dashboard():
         'selected_count': selected_count,
         'pending_count': pending_count,
         'active_drives_count': active_drives_count,
-        'not_applied_count': not_applied_count
+        'not_applied_count': not_applied_count,
+        'conversion_rate': conversion_rate,
+        'avg_placed_cgpa': avg_placed_cgpa
     }), 200
 
 

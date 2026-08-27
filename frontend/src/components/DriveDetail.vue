@@ -10,7 +10,13 @@
           <h1 class="page-title">{{ drive.job_title }}</h1>
           <p class="page-subtitle">{{ drive.company_name }}<span v-if="drive.location"> &middot; {{ drive.location }}</span></p>
         </div>
-        <router-link to="/student/drives" class="btn btn-outline-secondary">Back</router-link>
+        <div class="d-flex gap-2">
+          <button @click="analyzeFit" class="btn btn-primary" :disabled="analyzingFit">
+            <span v-if="analyzingFit" class="spinner-border spinner-border-sm me-2"></span>
+            <i v-else class="bi bi-magic me-2"></i>Analyze Fit
+          </button>
+          <router-link to="/student/drives" class="btn btn-outline-secondary">Back</router-link>
+        </div>
       </div>
 
       <div class="row g-4">
@@ -147,6 +153,26 @@
         </div>
       </div>
     </div>
+    
+    <!-- AI Analysis Modal -->
+    <div v-if="showAnalysisModal" class="modal d-block" style="background: rgba(0,0,0,0.5);" tabindex="-1">
+      <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg">
+        <div class="modal-content">
+          <div class="modal-header bg-primary text-white">
+            <h5 class="modal-title fw-bold"><i class="bi bi-magic me-2"></i>AI Resume Gap Analysis</h5>
+            <button type="button" class="btn-close btn-close-white" @click="showAnalysisModal = false"></button>
+          </div>
+          <div class="modal-body p-4 bg-light">
+             <div class="chat-bubble bg-white text-dark shadow-sm p-4 border rounded">
+                <div style="white-space: pre-wrap; font-size: 1rem; line-height: 1.6;" v-html="formatMarkdown(aiAnalysisText)"></div>
+             </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" @click="showAnalysisModal = false">Close</button>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -162,6 +188,9 @@ export default {
     const loading = ref(true);
     const applying = ref(false);
     const showModal = ref(false);
+    const showAnalysisModal = ref(false);
+    const analyzingFit = ref(false);
+    const aiAnalysisText = ref('');
     const profileForm = ref({});
     const loadingProfile = ref(false);
     const { proxy } = getCurrentInstance();
@@ -222,9 +251,40 @@ export default {
       }
     };
 
+    const analyzeFit = async () => {
+      analyzingFit.value = true;
+      try {
+        const studentRes = await axios.get('/api/student/profile');
+        const studentId = studentRes.data.id;
+        
+        const res = await axios.post('/api/ai/analyze-resume', {
+          student_id: studentId,
+          drive_id: drive.value.id
+        });
+        
+        aiAnalysisText.value = res.data.analysis;
+        showAnalysisModal.value = true;
+      } catch (err) {
+        proxy.$toast('Failed to generate AI analysis. Check API Key or profile.', 'error');
+      } finally {
+        analyzingFit.value = false;
+      }
+    };
+
+    const formatMarkdown = (text) => {
+      if (!text) return '';
+      // Simple markdown parser for bold and lists
+      let html = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+      html = html.replace(/\*(.*?)\*/g, '<em>$1</em>');
+      html = html.replace(/\n\n/g, '<br><br>');
+      html = html.replace(/\n- (.*?)/g, '<br>• $1');
+      html = html.replace(/\n\d+\. (.*?)/g, '<br><strong>$&</strong>'); // Keep numbers bold
+      return html;
+    };
+
     onMounted(loadDrive);
 
-    return { drive, loading, applying, showModal, profileForm, loadingProfile, openApplyModal, confirmApply, formatBranches, isDriveOpen };
+    return { drive, loading, applying, showModal, showAnalysisModal, analyzingFit, aiAnalysisText, analyzeFit, formatMarkdown, profileForm, loadingProfile, openApplyModal, confirmApply, formatBranches, isDriveOpen };
   }
 }
 </script>

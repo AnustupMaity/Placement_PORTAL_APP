@@ -43,6 +43,7 @@ if (!window.PPA) {
     { path: '/student/drives/:id', component: () => load('DriveDetail.vue'), name: 'DriveDetail', meta: { requiresAuth: true, role: 'student' } },
     { path: '/student/applications', component: () => load('StudentApplications.vue'), name: 'StudentApplications', meta: { requiresAuth: true, role: 'student' } },
     { path: '/student/profile', component: () => load('StudentProfile.vue'), name: 'StudentProfile', meta: { requiresAuth: true, role: 'student' } },
+    { path: '/student/mock-interview', component: () => load('MockInterview.vue'), name: 'MockInterview', meta: { requiresAuth: true, role: 'student' } },
     { path: '/student/history', component: () => load('StudentHistory.vue'), name: 'StudentHistory', meta: { requiresAuth: true, role: 'student' } },
     { path: '/student/community', component: () => load('CommunityBoard.vue'), name: 'StudentCommunity', meta: { requiresAuth: true, role: 'student' } },
     { path: '/student/messages', component: () => load('Messages.vue'), name: 'StudentMessages', meta: { requiresAuth: true, role: 'student' } },

@@ -9,6 +9,9 @@
     
     <!-- Global Toast Container -->
     <div class="ppa-toast-container" id="ppa-toast-container"></div>
+    
+    <!-- AI Support Bot (Global) -->
+    <SupportBot v-if="!isAuthPage && !isLandingPage" />
   </div>
 </template>
 
@@ -20,12 +23,16 @@ import { useRoute } from 'vue-router';
 export default {
   name: 'App',
   components: {
-    Navbar: defineAsyncComponent(() => load('Navbar.vue'))
+    Navbar: defineAsyncComponent(() => load('Navbar.vue')),
+    SupportBot: defineAsyncComponent(() => load('SupportBot.vue'))
   },
   setup() {
     const route = useRoute();
     const isAuthPage = computed(() => {
       return route.path === '/login' || route.path === '/register';
+    });
+    const isLandingPage = computed(() => {
+      return route.path === '/';
     });
 
     // Global toast logic
@@ -51,7 +58,9 @@ export default {
       }, 3000);
     };
 
-    return { isAuthPage };
+    };
+
+    return { isAuthPage, isLandingPage };
   }
 };
 </script>

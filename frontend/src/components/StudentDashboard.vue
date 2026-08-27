@@ -49,6 +49,44 @@
           </div>
         </div>
       </div>
+      
+      <!-- Advanced Analytics Row -->
+      <div class="row g-4 mb-4">
+        <div class="col-md-6">
+          <div class="ppa-card h-100">
+            <div class="card-header bg-primary text-white border-bottom-0"><i class="bi bi-lightning-charge me-2"></i>Application Conversion Rate</div>
+            <div class="card-body text-center d-flex flex-column justify-content-center">
+              <div class="display-4 fw-bold text-primary mb-2">{{ stats.conversion_rate || 0 }}%</div>
+              <p class="text-muted mb-0">of your applications result in an offer.</p>
+              <div class="progress mt-3" style="height: 10px;">
+                <div class="progress-bar bg-primary" :style="`width: ${stats.conversion_rate || 0}%`"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="ppa-card h-100">
+            <div class="card-header bg-dark text-white border-bottom-0"><i class="bi bi-graph-up me-2"></i>CGPA Benchmark</div>
+            <div class="card-body">
+              <div class="d-flex justify-content-between align-items-center mb-3">
+                <div>
+                  <div class="small text-muted text-uppercase fw-bold">Your CGPA</div>
+                  <div class="fs-3 fw-bold" :class="stats.student?.cgpa >= stats.avg_placed_cgpa ? 'text-success' : 'text-warning'">{{ stats.student?.cgpa || 'N/A' }}</div>
+                </div>
+                <div class="text-end">
+                  <div class="small text-muted text-uppercase fw-bold">Avg Placed CGPA</div>
+                  <div class="fs-3 fw-bold text-dark">{{ stats.avg_placed_cgpa || 'N/A' }}</div>
+                </div>
+              </div>
+              <div class="progress" style="height: 10px;">
+                <div class="progress-bar bg-success" :style="`width: ${(stats.student?.cgpa / 10) * 100}%`"></div>
+              </div>
+              <p v-if="stats.student?.cgpa >= stats.avg_placed_cgpa" class="small text-success mt-2 mb-0"><i class="bi bi-check-circle-fill me-1"></i>You are above the placement average!</p>
+              <p v-else class="small text-warning mt-2 mb-0"><i class="bi bi-info-circle-fill me-1"></i>Focus on skill-building to stand out.</p>
+            </div>
+          </div>
+        </div>
+      </div>
 
       <div class="row g-4">
         <div class="col-md-6">
@@ -60,6 +98,7 @@
                 <router-link to="/student/companies" class="btn btn-outline-primary text-start">Browse Companies</router-link>
                 <router-link to="/student/applications" class="btn btn-outline-primary text-start">My Applications</router-link>
                 <router-link to="/student/history" class="btn btn-outline-primary text-start">Placement History</router-link>
+                <router-link to="/student/mock-interview" class="btn btn-outline-primary text-start">AI Mock Interview <span class="badge bg-primary ms-2">New</span></router-link>
                 <router-link to="/student/profile" class="btn btn-outline-primary text-start">Update Profile</router-link>
                 <button @click="exportCSV" class="btn btn-outline-primary text-start" :disabled="exporting">
                   <span v-if="exporting" class="spinner-border spinner-border-sm me-2"></span>

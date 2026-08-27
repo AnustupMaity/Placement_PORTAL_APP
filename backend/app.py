@@ -96,6 +96,13 @@ def _register_blueprints(app):#blueprint all routes
     except ImportError as e:
         app.logger.warning(f"Could not load messages routes: {e}")
 
+    try:
+        from routes.ai import ai_bp
+        app.register_blueprint(ai_bp)
+        app.logger.info("Registered ai blueprint")
+    except ImportError as e:
+        app.logger.warning(f"Could not load ai routes: {e}")
+
 
 def _migrate_db_columns():
     """Ensure columns exist in existing tables (supports both SQLite and Postgres)."""
