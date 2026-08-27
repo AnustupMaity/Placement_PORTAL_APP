@@ -4,7 +4,11 @@
 
 ### *An Enterprise-Grade Campus Recruitment & Placement Automation Platform*
 
-🚀 **Live Demo:** [https://placement-portal-app-28xb.onrender.com](https://placement-portal-app-28xb.onrender.com)
+<div align="center">
+  <a href="https://placement-portal-app-28xb.onrender.com" target="_blank">
+    <img src="https://img.shields.io/badge/🚀_View_Live_Demo-Click_Here-00C7B7?style=for-the-badge&logo=render&logoColor=white" alt="Live Demo Button" />
+  </a>
+</div>
 
 [![Python](https://img.shields.io/badge/Python-3.10%2B-blue?logo=python&logoColor=white)](https://python.org)
 [![Flask](https://img.shields.io/badge/Flask-3.0%2B-000000?logo=flask&logoColor=white)](https://flask.palletsprojects.com/)
@@ -91,10 +95,6 @@ The platform features modern authentication (**JWT + Google OAuth**), **digital 
 ### 🔐 11. Secure OTP Password Recovery
 - Built-in **Forgot Password** and **Forgot Username** flows.
 - Automatically generates expiring 6-digit OTPs and emails them to users via SMTP, allowing secure self-service password resets.
-
-### 🏢 12. Single-Tenant SaaS Provisioning
-- Designed for Managed Hosting (Single-Tenant).
-- Includes a hidden `/api/admin/provision` endpoint that allows the system owner to instantly generate a new Admin account with a secure 12-character password and email the credentials to a new College/Institute renting the software.
 
 ---
 
