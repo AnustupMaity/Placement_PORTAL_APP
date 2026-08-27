@@ -27,8 +27,13 @@ ENV/
 
 # Environment Variables & Secrets
 .env
-.env.local
-.env.*.local
+.env.*
+*.env
+env.upload
+*.upload
+*.upload.*
+.env.upload
+
 
 # Flask & SQLite
 instance/

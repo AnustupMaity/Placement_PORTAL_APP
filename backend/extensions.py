@@ -31,17 +31,29 @@ def init_redis(app):
         redis_client = None
 
 def make_celery(app): # celery app make 
+    import ssl
+
+    broker_url = app.config.get('CELERY_BROKER_URL') or app.config.get('REDIS_URL')
+    result_backend = app.config.get('CELERY_RESULT_BACKEND') or app.config.get('REDIS_URL')
 
     celery = Celery(
         app.import_name,
-        broker=app.config.get('CELERY_BROKER_URL'),
-        backend=app.config.get('CELERY_RESULT_BACKEND'),
+        broker=broker_url,
+        backend=result_backend,
         include=['tasks.reminders', 'tasks.reports']
     )
-    celery.conf.update(
-        broker_url=app.config.get('CELERY_BROKER_URL'),
-        result_backend=app.config.get('CELERY_RESULT_BACKEND')
-    )
+
+    conf_dict = {
+        'broker_url': broker_url,
+        'result_backend': result_backend,
+    }
+
+    if broker_url and broker_url.startswith('rediss://'):
+        conf_dict['broker_use_ssl'] = {'ssl_cert_reqs': ssl.CERT_NONE}
+        conf_dict['redis_backend_use_ssl'] = {'ssl_cert_reqs': ssl.CERT_NONE}
+
+    celery.conf.update(conf_dict)
+
 
     from celery.schedules import crontab
     celery.conf.beat_schedule = {
