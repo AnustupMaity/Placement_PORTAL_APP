@@ -739,3 +739,5 @@ def get_placement_details(id):
         },
         'company': company.to_dict() if company and hasattr(company, 'to_dict') else {
             'company_name': company.company_name if company else 'Unknown'
+        }
+    }), 200
