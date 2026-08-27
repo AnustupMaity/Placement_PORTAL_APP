@@ -742,3 +742,62 @@ def get_placement_details(id):
         }
     }), 200
 
+@admin_bp.route('/api/admin/provision', methods=['POST'])
+@token_required
+@role_required('admin')
+def provision_admin():
+    """Create a new Admin account for a new Institute/College and email them the credentials."""
+    from flask import current_app
+    data = request.get_json(silent=True) or {}
+    email = data.get('email', '').strip().lower()
+    institute_name = data.get('institute_name', '').strip()
+    
+    if not email or not institute_name:
+        return jsonify({'error': 'Email and Institute Name are required.'}), 400
+        
+    if User.query.filter_by(email=email).first():
+        return jsonify({'error': 'An account with this email already exists.'}), 409
+        
+    # Generate unique username
+    base_username = institute_name.lower().replace(' ', '_').replace('-', '_')
+    username = base_username
+    counter = 1
+    while User.query.filter_by(username=username).first():
+        username = f"{base_username}_{counter}"
+        counter += 1
+        
+    # Generate strong random password
+    import secrets
+    import string
+    alphabet = string.ascii_letters + string.digits + "!@#$%^&*"
+    password = ''.join(secrets.choice(alphabet) for i in range(12))
+    
+    user = User(
+        username=username,
+        email=email,
+        role='admin',
+        institute_name=institute_name,
+        is_active=True
+    )
+    user.set_password(password)
+    
+    try:
+        db.session.add(user)
+        db.session.commit()
+        
+        # Email credentials
+        from routes.auth import send_email
+        subject = "Welcome to Placement Portal - Your Admin Credentials"
+        body = f"Hello,\n\nAn administrative account has been provisioned for {institute_name}.\n\nLogin URL: https://yourdomain.com/login\nUsername: {username}\nPassword: {password}\n\nPlease log in and change your password immediately.\n\nBest regards,\nPlacement Portal Team"
+        send_email(subject, email, body)
+        
+        return jsonify({
+            'message': f'Admin account for {institute_name} created successfully. Credentials emailed.',
+            'username': username,
+            'email': email
+        }), 201
+        
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f'Provisioning error: {e}')
+        return jsonify({'error': 'Failed to provision admin account.'}), 500

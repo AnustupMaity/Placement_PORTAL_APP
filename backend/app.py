@@ -26,8 +26,15 @@ def create_app(config_class=Config):
     mail.init_app(app)#flask maul connect
     init_redis(app)#redis connect
     
-    from extensions import socketio
-    socketio.init_app(app)
+    from extensions import socketio, limiter, redis_client
+    
+    if redis_client is not None:
+        redis_url = app.config.get('REDIS_URL')
+        socketio.init_app(app, message_queue=redis_url)
+    else:
+        socketio.init_app(app)
+        
+    limiter.init_app(app)
 
     #here the code below... CORS was suggested by chatgpt to avoid future errors
     CORS(app, resources={r'/api/*': {'origins': '*'}})
@@ -40,6 +47,7 @@ def create_app(config_class=Config):
         import models
         import models.community
         import models.message
+        import models.otp
         db.create_all()
         _migrate_db_columns()
         _seed_admin()
@@ -188,7 +196,8 @@ def _register_frontend_routes(app):
     def serve_sw():
         return send_from_directory(frontend_dir, 'sw.js')
 
-    @app.route('/<path:path>')#catch all - suggested by llm
+    @app.route('/', defaults={'path': ''})
+    @app.route('/<path:path>')
     def serve_catch_all(path):
         if path.startswith('api/'):
             return jsonify({'error': 'Not found.'}), 404

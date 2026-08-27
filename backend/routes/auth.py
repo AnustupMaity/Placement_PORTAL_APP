@@ -399,6 +399,122 @@ def me():
     return jsonify(data), 200
 
 
+import secrets
+from extensions import mail
+from flask_mail import Message
+from models.otp import OTP
+
+def send_email(subject, recipient, body):
+    try:
+        msg = Message(subject, recipients=[recipient], body=body)
+        mail.send(msg)
+        current_app.logger.info(f"Email sent to {recipient}")
+    except Exception as e:
+        current_app.logger.error(f"Failed to send email to {recipient}: {e}")
+        # Fallback logging if SMTP is broken
+        print(f"--- EMAIL FALLBACK ---\nTo: {recipient}\nSubject: {subject}\nBody: {body}\n----------------------")
+
+@auth_bp.route('/api/auth/forgot-username', methods=['POST'])
+def forgot_username():
+    data = request.get_json(silent=True) or {}
+    email = data.get('email', '').strip().lower()
+    
+    if not email:
+        return jsonify({'error': 'Email is required.'}), 400
+        
+    user = User.query.filter_by(email=email).first()
+    if not user:
+        # Prevent email enumeration by returning a success message anyway
+        return jsonify({'message': 'If the email is registered, your username has been sent.'}), 200
+        
+    subject = "Placement Portal - Forgot Username"
+    body = f"Hello,\n\nYou requested your username for the Placement Portal.\nYour username is: {user.username}\n\nIf you did not request this, please ignore this email."
+    send_email(subject, email, body)
+    
+    return jsonify({'message': 'If the email is registered, your username has been sent.'}), 200
+
+@auth_bp.route('/api/auth/forgot-password', methods=['POST'])
+def forgot_password():
+    data = request.get_json(silent=True) or {}
+    identifier = data.get('identifier', '').strip().lower()
+    
+    if not identifier:
+        return jsonify({'error': 'Username or Email is required.'}), 400
+        
+    user = User.query.filter((User.username.ilike(identifier)) | (User.email == identifier)).first()
+    if not user:
+        return jsonify({'message': 'If the account exists, an OTP has been sent to your email.'}), 200
+        
+    # Generate 6-digit OTP
+    otp_code = f"{secrets.randbelow(1000000):06d}"
+    expires = datetime.utcnow() + timedelta(minutes=10)
+    
+    otp_entry = OTP(user_id=user.id, code=otp_code, expires_at=expires)
+    db.session.add(otp_entry)
+    db.session.commit()
+    
+    subject = "Placement Portal - Password Reset OTP"
+    body = f"Hello {user.username},\n\nYour OTP for resetting your password is: {otp_code}\nThis OTP is valid for 10 minutes.\n\nIf you did not request a password reset, please secure your account."
+    send_email(subject, user.email, body)
+    
+    return jsonify({'message': 'If the account exists, an OTP has been sent to your email.'}), 200
+
+@auth_bp.route('/api/auth/verify-otp', methods=['POST'])
+def verify_otp():
+    data = request.get_json(silent=True) or {}
+    identifier = data.get('identifier', '').strip().lower()
+    otp_code = data.get('otp', '').strip()
+    
+    if not identifier or not otp_code:
+        return jsonify({'error': 'Identifier and OTP are required.'}), 400
+        
+    user = User.query.filter((User.username.ilike(identifier)) | (User.email == identifier)).first()
+    if not user:
+        return jsonify({'error': 'Invalid OTP or account.'}), 400
+        
+    otp_entry = OTP.query.filter_by(user_id=user.id, code=otp_code, used=False).filter(OTP.expires_at > datetime.utcnow()).order_by(OTP.created_at.desc()).first()
+    
+    if not otp_entry:
+        return jsonify({'error': 'Invalid or expired OTP.'}), 400
+        
+    otp_entry.used = True
+    db.session.commit()
+    
+    # Generate short-lived reset token
+    payload = {'user_id': user.id, 'exp': datetime.utcnow() + timedelta(minutes=15), 'action': 'reset_password'}
+    reset_token = jwt.encode(payload, current_app.config['SECRET_KEY'], algorithm='HS256')
+    
+    return jsonify({'message': 'OTP verified successfully.', 'reset_token': reset_token}), 200
+
+@auth_bp.route('/api/auth/reset-password', methods=['POST'])
+def reset_password():
+    data = request.get_json(silent=True) or {}
+    reset_token = data.get('reset_token', '').strip()
+    new_password = data.get('new_password', '')
+    
+    if not reset_token or not new_password:
+        return jsonify({'error': 'Token and new password are required.'}), 400
+        
+    if len(new_password) < 6:
+        return jsonify({'error': 'Password must be at least 6 characters.'}), 400
+        
+    try:
+        decoded = jwt.decode(reset_token, current_app.config['SECRET_KEY'], algorithms=['HS256'])
+        if decoded.get('action') != 'reset_password':
+            raise ValueError("Invalid token action")
+            
+        user = User.query.get(decoded['user_id'])
+        if not user:
+            return jsonify({'error': 'User not found.'}), 404
+            
+        user.set_password(new_password)
+        db.session.commit()
+        return jsonify({'message': 'Password has been reset successfully.'}), 200
+    except jwt.ExpiredSignatureError:
+        return jsonify({'error': 'Reset token has expired.'}), 400
+    except Exception:
+        return jsonify({'error': 'Invalid reset token.'}), 400
+
 
 def _generate_token(user: User) -> str:#helper func #hlp of llm taken for jwt usage
     payload = {

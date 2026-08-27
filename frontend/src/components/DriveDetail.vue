@@ -279,7 +279,7 @@ export default {
       html = html.replace(/\n\n/g, '<br><br>');
       html = html.replace(/\n- (.*?)/g, '<br>• $1');
       html = html.replace(/\n\d+\. (.*?)/g, '<br><strong>$&</strong>'); // Keep numbers bold
-      return html;
+      return window.DOMPurify ? window.DOMPurify.sanitize(html) : html;
     };
 
     onMounted(loadDrive);

@@ -9,7 +9,7 @@ BACKEND_DIR="/app/backend"
 # Check if Redis URL is configured
 if [ -n "$REDIS_URL" ] || [ -n "$CELERY_BROKER_URL" ]; then
     echo "Starting Celery Worker in background..."
-    celery -A app.celery --workdir "$BACKEND_DIR" worker --loglevel=info --concurrency=2 &
+    celery -A app.celery --workdir "$BACKEND_DIR" worker --loglevel=info --concurrency=1 &
     WORKER_PID=$!
 
     echo "Starting Celery Beat Scheduler in background..."
@@ -32,8 +32,8 @@ echo "Starting Gunicorn Web Server on port ${PORT:-5000}..."
 PORT="${PORT:-5000}"
 exec gunicorn --chdir "$BACKEND_DIR" "app:create_app()" \
     --bind "0.0.0.0:${PORT}" \
-    --workers 2 \
-    --threads 2 \
+    --workers 1 \
+    --worker-class eventlet \
     --timeout 120 \
     --access-logfile - \
     --error-logfile -

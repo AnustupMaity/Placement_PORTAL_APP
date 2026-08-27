@@ -13,6 +13,8 @@ if (!window.PPA) {
     { path: '/', component: () => load('Landing.vue'), name: 'Landing' },
     { path: '/login', component: () => load('Login.vue'), name: 'Login' },
     { path: '/register', component: () => load('Register.vue'), name: 'Register' },
+    { path: '/forgot-password', component: () => load('ForgotPassword.vue'), name: 'ForgotPassword' },
+    { path: '/forgot-username', component: () => load('ForgotUsername.vue'), name: 'ForgotUsername' },
 
     // admin 
     { path: '/admin', component: () => load('AdminDashboard.vue'), name: 'AdminDashboard', meta: { requiresAuth: true, role: 'admin' } },

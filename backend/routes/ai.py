@@ -5,6 +5,7 @@ from utils.decorators import token_required
 from models.student import StudentProfile
 from models.drive import PlacementDrive
 from models.company import CompanyProfile
+from extensions import limiter
 
 ai_bp = Blueprint('ai', __name__)
 
@@ -81,6 +82,7 @@ def query_ai(messages, max_tokens=1000):
 
 @ai_bp.route('/api/ai/mock-interview', methods=['POST'])
 @token_required
+@limiter.limit("10 per hour")
 def mock_interview():
     data = request.get_json(silent=True) or {}
     interview_type = data.get('type', 'HR')
@@ -103,6 +105,7 @@ Conduct a realistic {interview_type} interview. Ask one question at a time, wait
 
 @ai_bp.route('/api/ai/analyze-resume', methods=['POST'])
 @token_required
+@limiter.limit("15 per hour")
 def analyze_resume():
     data = request.get_json(silent=True) or {}
     student_id = data.get('student_id')
@@ -142,6 +145,7 @@ Keep the formatting clean using Markdown."""
 
 @ai_bp.route('/api/ai/support-bot', methods=['POST'])
 @token_required
+@limiter.limit("30 per hour")
 def support_bot():
     data = request.get_json(silent=True) or {}
     message = data.get('message', '')

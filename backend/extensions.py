@@ -13,7 +13,13 @@ redis_client = None
 
 # socketio
 from flask_socketio import SocketIO
+# We'll initialize socketio with the app later to use the app config for redis
 socketio = SocketIO(cors_allowed_origins="*")
+
+# Rate Limiter
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
+limiter = Limiter(key_func=get_remote_address)
 
 
 def init_redis(app):

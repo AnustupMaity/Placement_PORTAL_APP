@@ -2,6 +2,11 @@ import os
 
 class Config:
     SECRET_KEY = os.environ.get('SECRET_KEY', 'dev-secret-key-change-in-production')
+    
+    # Enforce strong secret key in production
+    if os.environ.get('FLASK_ENV') == 'production' and SECRET_KEY == 'dev-secret-key-change-in-production':
+        raise ValueError("CRITICAL: You must set a strong SECRET_KEY environment variable in production!")
+        
     db_url = os.environ.get('DATABASE_URL', 'sqlite:///placement.db')
     if db_url and db_url.startswith('postgres://'):
         db_url = db_url.replace('postgres://', 'postgresql://', 1)

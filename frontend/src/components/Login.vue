@@ -50,6 +50,11 @@
           <i class="bi bi-exclamation-triangle-fill"></i> <span>{{ error }}</span>
         </div>
         
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <router-link to="/forgot-password" class="small text-decoration-none text-muted">Forgot Password?</router-link>
+          <router-link to="/forgot-username" class="small text-decoration-none text-muted">Forgot Username?</router-link>
+        </div>
+
         <button type="submit" class="btn btn-gradient w-100 py-2 mb-3" :disabled="loading">
           <span v-if="loading" class="spinner-border spinner-border-sm me-2"></span>
           Sign In
