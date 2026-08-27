@@ -8,13 +8,9 @@ BACKEND_DIR="/app/backend"
 
 # Check if Redis URL is configured
 if [ -n "$REDIS_URL" ] || [ -n "$CELERY_BROKER_URL" ]; then
-    echo "Starting Celery Worker in background..."
-    celery -A app.celery --workdir "$BACKEND_DIR" worker --loglevel=info --concurrency=1 &
+    echo "Starting Celery Worker with embedded Beat Scheduler in background..."
+    celery -A app.celery --workdir "$BACKEND_DIR" worker --pool=solo -B --loglevel=info &
     WORKER_PID=$!
-
-    echo "Starting Celery Beat Scheduler in background..."
-    celery -A app.celery --workdir "$BACKEND_DIR" beat --loglevel=info &
-    BEAT_PID=$!
 else
     echo "Notice: REDIS_URL not provided. Celery worker/beat skipped."
 fi
@@ -23,7 +19,6 @@ fi
 cleanup() {
     echo "Caught shutdown signal. Stopping Celery processes..."
     if [ -n "$WORKER_PID" ]; then kill "$WORKER_PID" 2>/dev/null || true; fi
-    if [ -n "$BEAT_PID" ]; then kill "$BEAT_PID" 2>/dev/null || true; fi
     exit 0
 }
 trap cleanup INT TERM
