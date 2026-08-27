@@ -4,6 +4,8 @@
 
 ### *An Enterprise-Grade Campus Recruitment & Placement Automation Platform*
 
+🚀 **Live Demo:** [https://placement-portal-app-28xb.onrender.com](https://placement-portal-app-28xb.onrender.com)
+
 [![Python](https://img.shields.io/badge/Python-3.10%2B-blue?logo=python&logoColor=white)](https://python.org)
 [![Flask](https://img.shields.io/badge/Flask-3.0%2B-000000?logo=flask&logoColor=white)](https://flask.palletsprojects.com/)
 [![Vue.js 3](https://img.shields.io/badge/Vue.js-3.x-4FC08D?logo=vuedotjs&logoColor=white)](https://vuejs.org/)
@@ -86,6 +88,14 @@ The platform features modern authentication (**JWT + Google OAuth**), **digital 
 - Administrators can now personalize the portal through the **Institute Settings** profile page.
 - Manage global **Institute Name**, **Institute Address**, and upload an **Institute Logo** that is dynamically reflected across the app.
 
+### 🔐 11. Secure OTP Password Recovery
+- Built-in **Forgot Password** and **Forgot Username** flows.
+- Automatically generates expiring 6-digit OTPs and emails them to users via SMTP, allowing secure self-service password resets.
+
+### 🏢 12. Single-Tenant SaaS Provisioning
+- Designed for Managed Hosting (Single-Tenant).
+- Includes a hidden `/api/admin/provision` endpoint that allows the system owner to instantly generate a new Admin account with a secure 12-character password and email the credentials to a new College/Institute renting the software.
+
 ---
 
 ## 🛠️ Architecture & Tech Stack
@@ -129,6 +139,31 @@ sequenceDiagram
     Company->>Portal: Downloads Signed Acceptance & Offer Letters
     Admin->>Portal: Generates Institutional Placement Analytics (CSV / Reports)
 ```
+
+---
+
+## 🏗️ System Architecture Diagram
+
+This application follows a **Single-Tenant Monolithic Architecture** optimized for modern cloud deployments (like Render) while maintaining enterprise capabilities.
+
+- **Web Tier (Gunicorn + Eventlet):** Serves the Vue 3 SPA and handles all REST API/WebSocket traffic.
+- **Background Tier (Celery + Redis):** Handles heavy tasks (email sending, PDF generation) asynchronously so the web UI remains blazing fast.
+- **Data Tier (SQLite/PostgreSQL):** Stores relational data.
+
+---
+
+## 🗄️ Database Schema
+
+The relational database is built using SQLAlchemy ORM. Key tables include:
+
+1. **`users`**: Core authentication table (`id`, `username`, `email`, `password_hash`, `role`, `is_active`, `institute_name`).
+2. **`student_profiles`**: Linked to `users`. Stores academic data (`branch`, `year`, `cgpa`, `skills`, `resume_path`).
+3. **`company_profiles`**: Linked to `users`. Stores recruiter data (`company_name`, `industry`, `hr_email`, `approval_status`).
+4. **`placement_drives`**: Job postings created by companies (`job_title`, `salary`, `min_cgpa`, `eligible_branches`).
+5. **`applications`**: Junction table between students and drives (`status`, `application_date`).
+6. **`placements`**: Records of accepted offers (`salary`, `is_accepted`).
+7. **`otps`**: Short-lived 6-digit tokens for password recovery (`code`, `expires_at`, `used`).
+8. **`messages`** & **`community_posts`**: Data for real-time chat and forums.
 
 ---
 
