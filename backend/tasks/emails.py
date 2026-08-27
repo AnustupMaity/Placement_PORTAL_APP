@@ -1,3 +1,4 @@
+from datetime import datetime
 from flask import current_app
 from extensions import db, mail
 from flask_mail import Message
@@ -57,8 +58,41 @@ def send_interview_invite_email(application_id, interview_link, interview_date, 
     if custom_message:
         body += f"Message from company:\n{custom_message}\n\n"
     body += "Best of luck!\nPlacement Portal Team"
-    
     msg.body = body
+    
+    # Generate ICS attachment
+    try:
+        from datetime import timedelta
+        # Parse the datetime, defaulting to 1 hour duration
+        if hasattr(app, 'interview_scheduled') and app.interview_scheduled:
+            start_dt = app.interview_scheduled
+            end_dt = start_dt + timedelta(hours=1)
+            
+            dtstamp = datetime.utcnow().strftime("%Y%m%dT%H%M%SZ")
+            dtstart = start_dt.strftime("%Y%m%dT%H%M%SZ")
+            dtend = end_dt.strftime("%Y%m%dT%H%M%SZ")
+            
+            ics_content = f"""BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Placement Portal//EN
+CALSCALE:GREGORIAN
+METHOD:REQUEST
+BEGIN:VEVENT
+DTSTAMP:{dtstamp}
+DTSTART:{dtstart}
+DTEND:{dtend}
+SUMMARY:Interview: {app.drive.job_title} at {app.drive.company.company_name}
+DESCRIPTION:Interview Link: {interview_link}\\n\\nMessage: {custom_message}
+LOCATION:{interview_link}
+STATUS:CONFIRMED
+SEQUENCE:0
+ACTION:DISPLAY
+END:VEVENT
+END:VCALENDAR"""
+            msg.attach('interview_invite.ics', 'text/calendar', ics_content.encode('utf-8'))
+    except Exception as e:
+        current_app.logger.error(f"Error creating ICS: {e}")
+
     mail.send(msg)
     
     # Create notification

@@ -168,13 +168,16 @@
 </template>
 
 <script>
-import { ref, onMounted, getCurrentInstance, nextTick } from 'vue';
+import { ref, onMounted, onUnmounted, getCurrentInstance, nextTick } from 'vue';
 
 export default {
   name: 'Messages',
   setup() {
     const { proxy } = getCurrentInstance();
     const user = ref(JSON.parse(localStorage.getItem('ppa_user')) || {});
+    
+    // Socket.io connection
+    let socket = null;
     
     const threads = ref([]);
     const loadingThreads = ref(true);
@@ -211,6 +214,11 @@ export default {
     const selectThread = async (thread) => {
       activeThread.value = thread;
       loadingMessages.value = true;
+      
+      if (socket) {
+        socket.emit('join', { thread_id: thread.id });
+      }
+      
       try {
         const res = await axios.get(`/api/messages/${thread.id}`);
         replies.value = res.data.replies;
@@ -277,8 +285,53 @@ export default {
         proxy.$toast(err.response?.data?.error || 'Failed to resolve', 'error');
       }
     };
+    
+    const initSocket = () => {
+      if (window.io) {
+        socket = window.io();
+        
+        socket.on('connect', () => {
+          socket.emit('join', { user_id: user.value.id, role: user.value.role });
+        });
 
-    onMounted(loadThreads);
+        socket.on('new_thread', (thread) => {
+          // If thread isn't already in list, add it
+          if (!threads.value.find(t => t.id === thread.id)) {
+            threads.value.unshift(thread);
+          }
+        });
+
+        socket.on('new_reply', (reply) => {
+          // Find the thread and increment reply count
+          const thread = threads.value.find(t => t.id === reply.thread_id);
+          if (thread) {
+            thread.reply_count = (thread.reply_count || 0) + 1;
+            // move to top
+            threads.value = [thread, ...threads.value.filter(t => t.id !== thread.id)];
+          }
+          
+          // If it's the currently active thread, append the message
+          if (activeThread.value && activeThread.value.id === reply.thread_id) {
+            // avoid duplication if we just sent it
+            if (!replies.value.find(r => r.id === reply.id)) {
+               replies.value.push(reply);
+               scrollToBottom();
+            }
+          }
+        });
+      }
+    };
+
+    onMounted(() => {
+      loadThreads();
+      initSocket();
+    });
+    
+    onUnmounted(() => {
+      if (socket) {
+        socket.disconnect();
+      }
+    });
 
     return {
       user, threads, loadingThreads,

@@ -11,6 +11,10 @@ mail = Mail()
 # redis cache
 redis_client = None
 
+# socketio
+from flask_socketio import SocketIO
+socketio = SocketIO(cors_allowed_origins="*")
+
 
 def init_redis(app):
     

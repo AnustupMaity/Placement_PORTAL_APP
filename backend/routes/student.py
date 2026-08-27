@@ -196,8 +196,10 @@ def update_profile():
             return jsonify({'error': 'Email address is already in use by another account'}), 400
         student.user.email = new_email
 
-    updatable_fields = ['full_name', 'roll_number', 'branch', 'year', 'cgpa', 'skills', 'phone', 'resume_path', 'signature_path', 'profile_image_url']
-
+    updatable_fields = [
+        'full_name', 'roll_number', 'branch', 'year', 'cgpa', 
+        'skills', 'projects', 'experience', 'resume_path', 'signature_path', 'profile_image_url', 'phone'
+    ]
     for field in updatable_fields:
         if field in data:
             setattr(student, field, data[field])

@@ -13,6 +13,11 @@ from models.application import Application
 from models.placement import Placement
 from utils.decorators import token_required, role_required
 from utils.cache import cache_get, cache_set, cache_delete, cache_delete_pattern
+
+# AI NLP tools
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
+
 company_bp = Blueprint('company', __name__)
 
 def _get_company_profile():#helper func to get specific company after auth
@@ -278,25 +283,52 @@ def list_drive_applications(drive_id):#appn of drive placemnt
         .filter(Application.drive_id == drive_id)
         .all()
     )
-
+    
+    # Pre-compute job description text for NLP matching
+    job_text = f"{drive.job_title} {drive.job_description} {drive.required_skills or ''}".lower()
+    vectorizer = TfidfVectorizer(stop_words='english')
+    
     result = []
-    for app, student in applications:
-        result.append({
-            'id': app.id,
-            'student_id': student.id,
-            'full_name': student.full_name,
-            'drive_title': drive.job_title,
-            'branch': student.branch,
-            'year': student.year,
-            'cgpa': float(student.cgpa) if student.cgpa is not None else None,
-            'skills': student.skills,
-            'phone': student.phone,
-            'resume_path': student.resume_path,
-            'status': app.status,
-            'feedback': app.feedback,
-            'application_date': app.application_date.isoformat() + 'Z' if app.application_date else None,
-            'interview_scheduled': app.interview_scheduled.isoformat() + 'Z' if app.interview_scheduled else None,
-        })
+    
+    # Only vectorize if there are applicants
+    if applications:
+        # Build student texts
+        student_texts = []
+        for app, student in applications:
+            s_text = f"{student.branch} {student.skills or ''}".lower()
+            student_texts.append(s_text)
+            
+        try:
+            # Calculate cosine similarities
+            tfidf_matrix = vectorizer.fit_transform([job_text] + student_texts)
+            cosine_sims = cosine_similarity(tfidf_matrix[0:1], tfidf_matrix[1:]).flatten()
+        except Exception:
+            # Fallback if vocabulary is empty
+            cosine_sims = [0] * len(applications)
+            
+        for i, (app, student) in enumerate(applications):
+            match_score = round(cosine_sims[i] * 100, 1) if cosine_sims[i] > 0 else 0
+            
+            result.append({
+                'id': app.id,
+                'student_id': student.id,
+                'full_name': student.full_name,
+                'drive_title': drive.job_title,
+                'branch': student.branch,
+                'year': student.year,
+                'cgpa': float(student.cgpa) if student.cgpa is not None else None,
+                'skills': student.skills,
+                'phone': student.phone,
+                'resume_path': student.resume_path,
+                'status': app.status,
+                'feedback': app.feedback,
+                'application_date': app.application_date.isoformat() + 'Z' if app.application_date else None,
+                'interview_scheduled': app.interview_scheduled.isoformat() + 'Z' if app.interview_scheduled else None,
+                'ai_match_score': match_score
+            })
+            
+    # Sort result by AI match score descending
+    result.sort(key=lambda x: x.get('ai_match_score', 0), reverse=True)
 
     return jsonify(result), 200
 

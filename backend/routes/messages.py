@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify, g
 from sqlalchemy import or_
-from extensions import db
+from extensions import db, socketio
 from models.user import User
 from models.message import MessageThread, MessageReply
 from models.notification import Notification
@@ -108,6 +108,13 @@ def create_thread():
     # Users will see it in their messages tab.
         
     db.session.commit()
+    
+    # Emit real-time event
+    if recipient_id:
+        socketio.emit('new_thread', thread.to_dict(), room=f'user_{recipient_id}')
+    elif recipient_group:
+        socketio.emit('new_thread', thread.to_dict(), room=f'group_{recipient_group}')
+        
     return jsonify(thread.to_dict()), 201
 
 @messages_bp.route('/api/messages/<int:thread_id>/reply', methods=['POST'])
@@ -145,6 +152,10 @@ def reply_thread(thread_id):
         db.session.add(notif)
         
     db.session.commit()
+    
+    # Emit real-time reply event
+    socketio.emit('new_reply', reply.to_dict(), room=f'thread_{thread.id}')
+    
     return jsonify(reply.to_dict()), 201
 
 @messages_bp.route('/api/messages/<int:thread_id>/resolve', methods=['PUT'])

@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Resume - {{ student.full_name }}</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 2cm;
+        }
+        body {
+            font-family: Helvetica, Arial, sans-serif;
+            color: #333;
+            line-height: 1.6;
+        }
+        .header {
+            text-align: center;
+            border-bottom: 2px solid #2563eb;
+            padding-bottom: 20px;
+            margin-bottom: 20px;
+        }
+        .name {
+            font-size: 28pt;
+            color: #1e3a8a;
+            margin: 0;
+            font-weight: bold;
+        }
+        .contact-info {
+            font-size: 11pt;
+            color: #64748b;
+            margin-top: 5px;
+        }
+        .section-title {
+            font-size: 16pt;
+            color: #2563eb;
+            border-bottom: 1px solid #e2e8f0;
+            padding-bottom: 5px;
+            margin-top: 25px;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+        .item-title {
+            font-weight: bold;
+            font-size: 12pt;
+            color: #1e293b;
+            margin: 0;
+        }
+        .item-subtitle {
+            font-style: italic;
+            color: #475569;
+            font-size: 11pt;
+            margin: 0;
+        }
+        .content {
+            font-size: 11pt;
+            text-align: justify;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 10px;
+        }
+        td {
+            vertical-align: top;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1 class="name">{{ student.full_name }}</h1>
+        <div class="contact-info">
+            {{ student.branch }} (Batch of {{ student.year }}) | CGPA: {{ student.cgpa }}<br>
+            Phone: {{ student.phone }} | Roll No: {{ student.roll_number }}
+        </div>
+    </div>
+
+    {% if student.skills %}
+    <div class="section">
+        <div class="section-title">Technical Skills</div>
+        <div class="content">
+            {{ student.skills }}
+        </div>
+    </div>
+    {% endif %}
+
+    {% if student.experience %}
+    <div class="section">
+        <div class="section-title">Experience & Internships</div>
+        <div class="content">
+            {{ student.experience | replace('\n', '<br>') | safe }}
+        </div>
+    </div>
+    {% endif %}
+
+    {% if student.projects %}
+    <div class="section">
+        <div class="section-title">Projects</div>
+        <div class="content">
+            {{ student.projects | replace('\n', '<br>') | safe }}
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="section">
+        <div class="section-title">Education</div>
+        <table>
+            <tr>
+                <td style="width: 80%;">
+                    <div class="item-title">{{ institute_name }}</div>
+                    <div class="item-subtitle">{{ student.branch }}</div>
+                </td>
+                <td style="width: 20%; text-align: right;">
+                    <div class="item-title">{{ student.year }}</div>
+                    <div class="item-subtitle">CGPA: {{ student.cgpa }}</div>
+                </td>
+            </tr>
+        </table>
+    </div>
+
+</body>
+</html>

@@ -3,15 +3,19 @@
 import os
 import csv
 import uuid
+import io
 from datetime import datetime
-from flask import Blueprint, request, jsonify, g, current_app, send_from_directory
+from flask import Blueprint, request, jsonify, g, current_app, send_from_directory, send_file, render_template, render_template_string, make_response
 from extensions import db
 from models.application import Application
 from models.drive import PlacementDrive
 from models.company import CompanyProfile
 from models.student import StudentProfile
 from models.placement import Placement
+from models.user import User
 from utils.decorators import token_required, role_required
+from xhtml2pdf import pisa
+import openpyxl
 
 export_bp = Blueprint('export', __name__)
 
@@ -277,5 +281,88 @@ def export_acceptance_letter(placement_id):
         response.headers['Content-Disposition'] = f'attachment; filename=Acceptance_Letter_{placement.id}.pdf'
         return response
     except Exception as e:
-        current_app.logger.error(f"Error in export_acceptance_letter: {e}")
         return jsonify({'error': f'PDF generation failed: {str(e)}'}), 500
+
+
+@export_bp.route('/api/export/placements/excel', methods=['GET'])
+@token_required
+@role_required('admin')
+def export_placements_excel():
+    placements = (
+        db.session.query(Placement, StudentProfile, CompanyProfile)
+        .join(StudentProfile, Placement.student_id == StudentProfile.id)
+        .join(CompanyProfile, Placement.company_id == CompanyProfile.id)
+        .all()
+    )
+
+    wb = openpyxl.Workbook()
+    ws_summary = wb.active
+    ws_summary.title = "Summary"
+    
+    headers = ['Name', 'Roll No', 'Branch', 'Company', 'Position', 'Salary', 'Date']
+    ws_summary.append(headers)
+    
+    branches = {}
+
+    for placement, student, company in placements:
+        row = [
+            student.full_name,
+            student.roll_number,
+            student.branch,
+            company.company_name,
+            placement.position,
+            placement.salary,
+            placement.created_at.strftime('%Y-%m-%d') if placement.created_at else ''
+        ]
+        ws_summary.append(row)
+        
+        branch = student.branch or "Unknown"
+        if branch not in branches:
+            branches[branch] = []
+        branches[branch].append(row)
+
+    for branch, rows in branches.items():
+        # Sheet names can't exceed 31 chars
+        ws_branch = wb.create_sheet(title=branch[:31])
+        ws_branch.append(headers)
+        for r in rows:
+            ws_branch.append(r)
+
+    output = io.BytesIO()
+    wb.save(output)
+    output.seek(0)
+
+    return send_file(
+        output,
+        mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        as_attachment=True,
+        download_name='placement_report.xlsx'
+    )
+
+@export_bp.route('/api/export/resume/<int:student_id>', methods=['GET'])
+@token_required
+def export_resume(student_id):
+    student = StudentProfile.query.get_or_404(student_id)
+    
+    admin_user = User.query.filter_by(role='admin').first()
+    institute_name = admin_user.institute_name if admin_user and admin_user.institute_name else "Institute Name"
+    
+    html = render_template('resume.html', student=student, institute_name=institute_name)
+    
+    pdf = io.BytesIO()
+    pisa_status = pisa.CreatePDF(
+        io.StringIO(html),
+        dest=pdf
+    )
+    
+    if pisa_status.err:
+        return jsonify({'error': 'Failed to generate PDF'}), 500
+        
+    pdf.seek(0)
+    
+    return send_file(
+        pdf,
+        mimetype='application/pdf',
+        as_attachment=True,
+        download_name=f'Resume_{student.full_name.replace(" ", "_")}.pdf'
+    )

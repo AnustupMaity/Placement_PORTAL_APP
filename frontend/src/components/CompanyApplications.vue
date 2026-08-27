@@ -48,6 +48,7 @@
               <th v-if="isGeneralView">Drive</th>
               <th>Branch</th>
               <th>CGPA</th>
+              <th v-if="!isGeneralView">AI Match Score</th>
               <th>Date Applied</th>
               <th>Status</th>
               <th>Actions</th>
@@ -66,6 +67,14 @@
               <td v-if="isGeneralView">{{ app.drive_title }}</td>
               <td>{{ app.branch || '-' }}</td>
               <td>{{ app.cgpa ? app.cgpa.toFixed(2) : '-' }}</td>
+              <td v-if="!isGeneralView">
+                <div class="d-flex align-items-center gap-2" title="Based on Resume NLP matching">
+                  <div class="progress" style="width: 60px; height: 6px;">
+                    <div class="progress-bar" :class="app.ai_match_score > 70 ? 'bg-success' : (app.ai_match_score > 40 ? 'bg-warning' : 'bg-danger')" :style="{ width: (app.ai_match_score || 0) + '%' }"></div>
+                  </div>
+                  <span class="small fw-medium">{{ app.ai_match_score || 0 }}%</span>
+                </div>
+              </td>
               <td>{{ formatDate(app.application_date) }}</td>
               <td>
                 <span :class="'status-badge badge-' + app.status">{{ app.status }}</span>
@@ -127,10 +136,12 @@
                     <tr>
                       <td class="text-muted align-middle">Resume</td>
                       <td>
-                        <a v-if="selectedApp.resume_path" :href="selectedApp.resume_path" target="_blank" style="word-break: break-all;" class="text-primary text-decoration-none">
-                          {{ selectedApp.resume_path }}
+                        <a v-if="selectedApp.resume_path" :href="selectedApp.resume_path" target="_blank" style="word-break: break-all;" class="btn btn-sm btn-outline-primary me-2">
+                          <i class="bi bi-box-arrow-up-right me-1"></i>View Uploaded Resume
                         </a>
-                        <span v-else class="text-muted small">No resume provided</span>
+                        <a :href="`/api/export/resume/${selectedApp.student_id}`" target="_blank" class="btn btn-sm btn-primary">
+                          <i class="bi bi-file-earmark-pdf me-1"></i>Download Auto-Resume
+                        </a>
                       </td>
                     </tr>
                   </tbody>

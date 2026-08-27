@@ -16,8 +16,9 @@ class StudentProfile(db.Model):#std site with std role
     roll_number = Column(String(50), unique=True)
     branch = Column(String(100))
     year = Column(Integer)  # passout
-    cgpa = Column(Float)
     skills = Column(Text)  # use ,, 
+    projects = Column(Text, nullable=True) # JSON or text list of projects
+    experience = Column(Text, nullable=True) # Internships/Work Exp
     resume_path = Column(String(500))
     signature_path = Column(String(500), nullable=True)
     profile_image_url = Column(String(500), nullable=True)
@@ -40,6 +41,8 @@ class StudentProfile(db.Model):#std site with std role
             'year': self.year,
             'cgpa': self.cgpa,
             'skills': self.skills,
+            'projects': self.projects,
+            'experience': self.experience,
             'resume_path': self.resume_path,
             'signature_path': self.signature_path,
             'profile_image_url': self.profile_image_url,

@@ -62,7 +62,18 @@
 
           <div class="mb-3">
             <label class="form-label-dark">Skills</label>
-            <input type="text" class="form-control" v-model="form.skills" placeholder="Comma-separated skills">
+            <input type="text" class="form-control" v-model="form.skills" placeholder="Comma-separated skills (e.g. Python, Vue, SQL)">
+          </div>
+
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label-dark">Experience & Internships</label>
+              <textarea class="form-control" v-model="form.experience" rows="4" placeholder="List your internships and work experience..."></textarea>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label-dark">Projects</label>
+              <textarea class="form-control" v-model="form.projects" rows="4" placeholder="List your academic or personal projects..."></textarea>
+            </div>
           </div>
 
           <div class="mb-4">

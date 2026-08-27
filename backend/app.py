@@ -18,6 +18,9 @@ def create_app(config_class=Config):
     db.init_app(app)#sqlahmy connect flask
     mail.init_app(app)#flask maul connect
     init_redis(app)#redis connect
+    
+    from extensions import socketio
+    socketio.init_app(app)
 
     #here the code below... CORS was suggested by chatgpt to avoid future errors
     CORS(app, resources={r'/api/*': {'origins': '*'}})
@@ -95,42 +98,36 @@ def _register_blueprints(app):#blueprint all routes
 
 
 def _migrate_db_columns():
-    """Ensure SQLite columns for signature support exist in existing tables."""
-    from sqlalchemy import text
+    """Ensure columns exist in existing tables (supports both SQLite and Postgres)."""
+    from sqlalchemy import text, inspect
     try:
-        # Check and add columns to placements
-        with db.engine.connect() as conn:
-            # placement columns
-            res = conn.execute(text("PRAGMA table_info(placements)")).fetchall()
-            existing_cols = [r[1] for r in res]
-            if 'student_signature_path' not in existing_cols:
-                conn.execute(text("ALTER TABLE placements ADD COLUMN student_signature_path VARCHAR(500)"))
-            if 'company_signature_path' not in existing_cols:
-                conn.execute(text("ALTER TABLE placements ADD COLUMN company_signature_path VARCHAR(500)"))
+        inspector = inspect(db.engine)
+        
+        def add_column_if_not_exists(table_name, column_name, column_type):
+            columns = [col['name'] for col in inspector.get_columns(table_name)]
+            if column_name not in columns:
+                with db.engine.connect() as conn:
+                    conn.execute(text(f"ALTER TABLE {table_name} ADD COLUMN {column_name} {column_type}"))
+                    conn.commit()
 
-            # company_profiles columns
-            res_comp = conn.execute(text("PRAGMA table_info(company_profiles)")).fetchall()
-            existing_comp_cols = [r[1] for r in res_comp]
-            if 'signature_path' not in existing_comp_cols:
-                conn.execute(text("ALTER TABLE company_profiles ADD COLUMN signature_path VARCHAR(500)"))
+        if inspector.has_table('placements'):
+            add_column_if_not_exists('placements', 'student_signature_path', 'VARCHAR(500)')
+            add_column_if_not_exists('placements', 'company_signature_path', 'VARCHAR(500)')
 
-            # student_profiles columns
-            res_std = conn.execute(text("PRAGMA table_info(student_profiles)")).fetchall()
-            existing_std_cols = [r[1] for r in res_std]
-            if 'signature_path' not in existing_std_cols:
-                conn.execute(text("ALTER TABLE student_profiles ADD COLUMN signature_path VARCHAR(500)"))
+        if inspector.has_table('company_profiles'):
+            add_column_if_not_exists('company_profiles', 'signature_path', 'VARCHAR(500)')
 
-            # users columns
-            res_usr = conn.execute(text("PRAGMA table_info(users)")).fetchall()
-            existing_usr_cols = [r[1] for r in res_usr]
-            if 'institute_name' not in existing_usr_cols:
-                conn.execute(text("ALTER TABLE users ADD COLUMN institute_name VARCHAR(200)"))
-            if 'institute_logo_url' not in existing_usr_cols:
-                conn.execute(text("ALTER TABLE users ADD COLUMN institute_logo_url VARCHAR(500)"))
-            if 'institute_address' not in existing_usr_cols:
-                conn.execute(text("ALTER TABLE users ADD COLUMN institute_address VARCHAR(500)"))
+        if inspector.has_table('student_profiles'):
+            add_column_if_not_exists('student_profiles', 'signature_path', 'VARCHAR(500)')
+            add_column_if_not_exists('student_profiles', 'projects', 'TEXT')
+            add_column_if_not_exists('student_profiles', 'experience', 'TEXT')
 
-            conn.commit()
+        if inspector.has_table('users'):
+            add_column_if_not_exists('users', 'institute_name', 'VARCHAR(200)')
+            add_column_if_not_exists('users', 'institute_logo_url', 'VARCHAR(500)')
+            add_column_if_not_exists('users', 'institute_address', 'VARCHAR(500)')
+            add_column_if_not_exists('users', 'signature_path', 'VARCHAR(500)')
+
     except Exception as e:
         print(f"Migration note: {e}")
 
@@ -197,8 +194,38 @@ def _register_error_handlers(app):
         return jsonify({'error': 'An unexpected internal server error occurred.'}), 500
 
 
+def _register_socketio_events(socketio):
+    from flask_socketio import join_room, leave_room
+    
+    @socketio.on('join')
+    def on_join(data):
+        # Extremely basic join handler for real-time rooms
+        user_id = data.get('user_id')
+        role = data.get('role')
+        thread_id = data.get('thread_id')
+        
+        if user_id:
+            join_room(f'user_{user_id}')
+        if role == 'student':
+            join_room('group_all_students')
+        if role == 'company':
+            join_room('group_all_companies')
+        if role == 'admin':
+            join_room('group_admin')
+        if thread_id:
+            join_room(f'thread_{thread_id}')
+            
+    @socketio.on('leave')
+    def on_leave(data):
+        thread_id = data.get('thread_id')
+        if thread_id:
+            leave_room(f'thread_{thread_id}')
+
+
 app = create_app()
 celery = make_celery(app)
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    from extensions import socketio
+    _register_socketio_events(socketio)
+    socketio.run(app, host='0.0.0.0', port=5000, debug=True)
