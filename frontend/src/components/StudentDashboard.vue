@@ -129,11 +129,11 @@
                 <div v-if="loadingNotifs" class="text-center py-4">
                   <span class="spinner-border spinner-border-sm text-primary"></span>
                 </div>
-                <div v-else-if="notifications.length === 0" class="text-center py-4 text-muted">
+                <div v-else-if="(!notifications || !Array.isArray(notifications) || notifications.length === 0)" class="text-center py-4 text-muted">
                   No recent notifications.
                 </div>
                 <a 
-                  v-for="n in notifications.slice(0, 5)" 
+                  v-for="n in (Array.isArray(notifications) ? notifications : []).slice(0, 5)" 
                   :key="n.id" 
                   :href="n.link || '#'" 
                   class="list-group-item list-group-item-action d-flex align-items-start gap-3 p-3"
