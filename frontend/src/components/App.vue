@@ -1,6 +1,6 @@
 <template>
   <div>
-    <Navbar v-if="!isAuthPage" />
+    <Navbar v-if="!isAuthPage && !isLandingPage" />
     <router-view v-slot="{ Component }">
       <transition name="page" mode="out-in">
         <component :is="Component" />
