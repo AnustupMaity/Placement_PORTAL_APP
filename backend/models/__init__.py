@@ -8,6 +8,7 @@ from models.student import StudentProfile
 from models.drive import PlacementDrive
 from models.application import Application
 from models.placement import Placement
+from models.notification import Notification
 
 __all__ = [
     'User',
@@ -16,4 +17,5 @@ __all__ = [
     'PlacementDrive',
     'Application',
     'Placement',
+    'Notification',
 ]

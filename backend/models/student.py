@@ -20,6 +20,7 @@ class StudentProfile(db.Model):#std site with std role
     skills = Column(Text)  # use ,, 
     resume_path = Column(String(500))
     signature_path = Column(String(500), nullable=True)
+    profile_image_url = Column(String(500), nullable=True)
     phone = Column(String(20))
     is_blacklisted = Column(Boolean, default=False)
     created_at = Column(DateTime, default=datetime.utcnow)
@@ -41,6 +42,7 @@ class StudentProfile(db.Model):#std site with std role
             'skills': self.skills,
             'resume_path': self.resume_path,
             'signature_path': self.signature_path,
+            'profile_image_url': self.profile_image_url,
             'phone': self.phone,
             'is_blacklisted': self.is_blacklisted,
             'created_at': self.created_at.isoformat() + 'Z' if self.created_at else None,

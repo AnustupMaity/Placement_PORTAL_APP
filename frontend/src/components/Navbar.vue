@@ -36,6 +36,12 @@
             <li class="nav-item">
               <router-link class="nav-link" to="/admin/placements"><i class="bi bi-award me-1"></i> Placements</router-link>
             </li>
+            <li class="nav-item">
+              <router-link class="nav-link" to="/admin/community"><i class="bi bi-chat-square-text me-1"></i> Community</router-link>
+            </li>
+            <li class="nav-item">
+              <router-link class="nav-link" to="/admin/messages"><i class="bi bi-envelope me-1"></i> Messages</router-link>
+            </li>
           </template>
 
           <!-- Company Links -->
@@ -51,6 +57,12 @@
             </li>
             <li class="nav-item">
               <router-link class="nav-link" to="/company/placements"><i class="bi bi-award me-1"></i> Placements</router-link>
+            </li>
+            <li class="nav-item">
+              <router-link class="nav-link" to="/company/community"><i class="bi bi-chat-square-text me-1"></i> Community</router-link>
+            </li>
+            <li class="nav-item">
+              <router-link class="nav-link" to="/company/messages"><i class="bi bi-envelope me-1"></i> Messages</router-link>
             </li>
             <li class="nav-item">
               <router-link class="nav-link" to="/company/profile"><i class="bi bi-building me-1"></i> Profile</router-link>
@@ -75,6 +87,12 @@
               <router-link class="nav-link" to="/student/history"><i class="bi bi-award me-1"></i> Offers & History</router-link>
             </li>
             <li class="nav-item">
+              <router-link class="nav-link" to="/student/community"><i class="bi bi-chat-square-text me-1"></i> Community</router-link>
+            </li>
+            <li class="nav-item">
+              <router-link class="nav-link" to="/student/messages"><i class="bi bi-envelope me-1"></i> Messages</router-link>
+            </li>
+            <li class="nav-item">
               <router-link class="nav-link" to="/student/profile"><i class="bi bi-person me-1"></i> Profile</router-link>
             </li>
           </template>
@@ -89,6 +107,11 @@
                 <button class="btn btn-outline-secondary btn-sm bg-light" type="submit"><i class="bi bi-search"></i></button>
               </div>
             </form>
+
+            <!-- Messages Icon -->
+            <router-link class="notification-btn me-1 position-relative" :to="user.role === 'admin' ? '/admin/messages' : (user.role === 'company' ? '/company/messages' : '/student/messages')" style="color: var(--ppa-text); padding: 0.5rem; display: flex; align-items: center; justify-content: center; text-decoration: none;">
+              <i class="bi bi-envelope-fill"></i>
+            </router-link>
 
             <!-- Notifications Center Dropdown -->
             <div class="dropdown me-2">
@@ -114,7 +137,8 @@
                     :key="n.id" 
                     :to="n.link || '#'" 
                     class="notification-item"
-                    :class="{ unread: n.unread }"
+                    :class="{ unread: !n.is_read }"
+                    @click="markAsRead(n.id)"
                   >
                     <div class="d-flex align-items-start gap-2">
                       <i class="bi fs-5" :class="{
@@ -146,9 +170,15 @@
                 </div>
               </button>
               <ul class="dropdown-menu dropdown-menu-end shadow-sm mt-2">
-                <li v-if="user.role !== 'admin'">
-                  <router-link class="dropdown-item" :to="user.role === 'student' ? '/student/profile' : '/company/profile'">
+                <li>
+                  <router-link class="dropdown-item" :to="user.role === 'student' ? '/student/profile' : (user.role === 'company' ? '/company/profile' : '/admin/profile')">
                     <i class="bi bi-person me-2 text-primary"></i>My Profile
+                  </router-link>
+                </li>
+                <li v-if="user.role === 'admin'"><hr class="dropdown-divider"></li>
+                <li v-if="user.role === 'admin'">
+                  <router-link class="dropdown-item" to="/admin/profile">
+                    <i class="bi bi-gear me-2 text-secondary"></i>Institute Settings
                   </router-link>
                 </li>
                 <li><hr class="dropdown-divider"></li>
@@ -174,6 +204,7 @@
 <script>
 import { ref, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
+import axios from 'axios';
 
 export default {
   name: 'Navbar',
@@ -197,13 +228,31 @@ export default {
       if (!user.value) return;
       loadingNotifs.value = true;
       try {
-        const res = await axios.get('/api/notifications');
-        notifications.value = res.data.notifications || [];
-        unreadCount.value = res.data.unread_count || 0;
+        const token = localStorage.getItem('ppa_token') || localStorage.getItem('token');
+        if (!token) return;
+        const config = { headers: { Authorization: `Bearer ${token}` } };
+        const res = await axios.get('/api/notifications', config);
+        notifications.value = res.data || [];
+        
+        const countRes = await axios.get('/api/notifications/unread-count', config);
+        unreadCount.value = countRes.data.count || 0;
       } catch (err) {
         // silent fail
       } finally {
         loadingNotifs.value = false;
+      }
+    };
+
+    const markAsRead = async (id) => {
+      try {
+        const token = localStorage.getItem('ppa_token') || localStorage.getItem('token');
+        if (!token) return;
+        await axios.put(`/api/notifications/${id}/read`, {}, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        loadNotifications(); // Reload to update unread status and count
+      } catch (err) {
+        // Handle error
       }
     };
 
@@ -240,7 +289,7 @@ export default {
 
     return {
       user, logout, globalSearchQuery, handleGlobalSearch,
-      notifications, unreadCount, loadingNotifs, loadNotifications
+      notifications, unreadCount, loadingNotifs, loadNotifications, markAsRead
     };
   }
 }

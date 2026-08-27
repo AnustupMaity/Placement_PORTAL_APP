@@ -84,6 +84,45 @@
           </div>
         </div>
       </div>
+      <div class="row g-4 mt-1">
+        <div class="col-12">
+          <div class="ppa-card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+              <span>Recent Notifications</span>
+            </div>
+            <div class="card-body p-0">
+              <div class="list-group list-group-flush">
+                <div v-if="loadingNotifs" class="text-center py-4">
+                  <span class="spinner-border spinner-border-sm text-primary"></span>
+                </div>
+                <div v-else-if="notifications.length === 0" class="text-center py-4 text-muted">
+                  No recent notifications.
+                </div>
+                <a 
+                  v-for="n in notifications.slice(0, 5)" 
+                  :key="n.id" 
+                  :href="n.link || '#'" 
+                  class="list-group-item list-group-item-action d-flex align-items-start gap-3 p-3"
+                  :class="{'bg-light': !n.is_read}"
+                >
+                  <i class="bi fs-4 mt-1" :class="{
+                    'bi-award-fill text-warning': n.title.toLowerCase().includes('offer') || n.title.toLowerCase().includes('selected'),
+                    'bi-calendar-check-fill text-info': n.title.toLowerCase().includes('interview') || n.title.toLowerCase().includes('test'),
+                    'bi-bell-fill text-primary': !n.title.toLowerCase().includes('offer') && !n.title.toLowerCase().includes('interview')
+                  }"></i>
+                  <div>
+                    <div class="d-flex justify-content-between align-items-center w-100 mb-1">
+                      <h6 class="mb-0 fw-bold" :class="{'text-dark': !n.is_read, 'text-muted': n.is_read}">{{ n.title }}</h6>
+                      <small class="text-muted">{{ formatDate(n.created_at) }}</small>
+                    </div>
+                    <p class="mb-0 small" :class="{'text-dark': !n.is_read, 'text-muted': n.is_read}">{{ n.message }}</p>
+                  </div>
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </template>
   </div>
 </template>
@@ -97,7 +136,15 @@ export default {
     const stats = ref({});
     const loading = ref(true);
     const exporting = ref(false);
+    const notifications = ref([]);
+    const loadingNotifs = ref(true);
     const { proxy } = getCurrentInstance();
+
+    const formatDate = (dateStr) => {
+      if (!dateStr) return '';
+      const d = new Date(dateStr);
+      return d.toLocaleDateString() + ' ' + d.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+    };
 
     const loadStats = async () => {
       try {
@@ -130,6 +177,21 @@ export default {
         }
       } catch (err) {
         console.error('Failed to load charts', err);
+      }
+    };
+
+    const loadNotifications = async () => {
+      try {
+        const token = localStorage.getItem('ppa_token') || localStorage.getItem('token');
+        if (!token) return;
+        const res = await axios.get('/api/notifications', {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        notifications.value = res.data || [];
+      } catch (err) {
+        console.error('Failed to load notifications', err);
+      } finally {
+        loadingNotifs.value = false;
       }
     };
 
@@ -189,11 +251,14 @@ export default {
     };
 
     onMounted(async () => {
-        await loadStats();
-        await loadCharts();
+        await Promise.all([
+          loadStats(),
+          loadCharts(),
+          loadNotifications()
+        ]);
     });
 
-    return { stats, loading, exporting, exportCSV };
+    return { stats, loading, exporting, exportCSV, notifications, loadingNotifs, formatDate };
   }
 }
 </script>

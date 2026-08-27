@@ -14,15 +14,31 @@
     <div v-else class="ppa-card" style="max-width: 800px;">
       <div class="card-body">
         <form @submit.prevent="handleUpdate">
+          <div class="row align-items-center mb-4">
+            <div class="col-md-2 text-center">
+              <div class="position-relative d-inline-block">
+                <img :src="form.profile_image_url || 'https://via.placeholder.com/100'" alt="Profile Picture" class="rounded-circle border" style="width: 100px; height: 100px; object-fit: cover;">
+                <label class="btn btn-sm btn-primary position-absolute bottom-0 end-0 rounded-circle shadow-sm" style="padding: 0.25rem 0.5rem; cursor: pointer;">
+                  <i class="bi bi-camera"></i>
+                  <input type="file" accept="image/png, image/jpeg, image/jpg, image/webp" @change="handleProfileUpload" class="d-none" :disabled="uploadingProfile">
+                </label>
+              </div>
+              <div v-if="uploadingProfile" class="small text-muted mt-1"><span class="spinner-border spinner-border-sm me-1"></span>Uploading...</div>
+            </div>
+            <div class="col-md-10">
+              <div class="row">
+                <div class="col-md-6 mb-3">
+                  <label class="form-label-dark">Full Name *</label>
+                  <input type="text" class="form-control" v-model="form.full_name" required>
+                </div>
+                <div class="col-md-6 mb-3">
+                  <label class="form-label-dark">Email Address *</label>
+                  <input type="email" class="form-control" v-model="form.email" required>
+                </div>
+              </div>
+            </div>
+          </div>
           <div class="row">
-            <div class="col-md-4 mb-3">
-              <label class="form-label-dark">Full Name *</label>
-              <input type="text" class="form-control" v-model="form.full_name" required>
-            </div>
-            <div class="col-md-4 mb-3">
-              <label class="form-label-dark">Email Address *</label>
-              <input type="email" class="form-control" v-model="form.email" required>
-            </div>
             <div class="col-md-4 mb-3">
               <label class="form-label-dark">Roll Number</label>
               <input type="text" class="form-control" v-model="form.roll_number">
@@ -109,6 +125,7 @@ export default {
     const loading = ref(true);
     const saving = ref(false);
     const uploadingSig = ref(false);
+    const uploadingProfile = ref(false);
     const form = ref({});
 
     const loadProfile = async () => {
@@ -149,6 +166,33 @@ export default {
       }
     };
 
+    const handleProfileUpload = async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const validTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp'];
+      if (!validTypes.includes(file.type)) {
+        proxy.$toast('Please select a valid image.', 'error');
+        return;
+      }
+
+      uploadingProfile.value = true;
+      const formData = new FormData();
+      formData.append('file', file);
+
+      try {
+        const res = await axios.post('/api/upload/image', formData, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
+        form.value.profile_image_url = res.data.file_url;
+        proxy.$toast('Profile picture uploaded! Click Update Profile to save changes.', 'success');
+      } catch (err) {
+        proxy.$toast(err.response?.data?.error || 'Failed to upload profile picture.', 'error');
+      } finally {
+        uploadingProfile.value = false;
+      }
+    };
+
     const removeSignature = () => {
       form.value.signature_path = null;
       proxy.$toast('Signature removed. Click Update Profile to save.', 'info');
@@ -168,7 +212,7 @@ export default {
 
     onMounted(loadProfile);
 
-    return { form, loading, saving, uploadingSig, handleSignatureUpload, removeSignature, handleUpdate };
+    return { form, loading, saving, uploadingSig, uploadingProfile, handleSignatureUpload, handleProfileUpload, removeSignature, handleUpdate };
   }
 }
 </script>

@@ -70,21 +70,24 @@ def export_applications_csv(self, student_id):#particular student data export
 
 
 @celery.task(name='tasks.exports.export_company_applications_csv', bind=True, max_retries=3)
-def export_company_applications_csv(self, company_id):#company drive csv
+def export_company_applications_csv(self, company_id, status=None):#company drive csv
     from flask import current_app
     try:
         from models.application import Application
         from models.drive import PlacementDrive
         from models.student import StudentProfile
 
-        results = (
+        query = (
             db.session.query(Application, PlacementDrive, StudentProfile)
             .join(PlacementDrive, Application.drive_id == PlacementDrive.id)
             .join(StudentProfile, Application.student_id == StudentProfile.id)
             .filter(PlacementDrive.company_id == company_id)
-            .order_by(Application.application_date.desc())
-            .all()
         )
+        
+        if status:
+            query = query.filter(Application.status == status)
+            
+        results = query.order_by(Application.application_date.desc()).all()
 
         export_dir = os.path.join(current_app.root_path, 'exports')
         os.makedirs(export_dir, exist_ok=True)
@@ -120,7 +123,7 @@ def export_company_applications_csv(self, company_id):#company drive csv
 
 
 @celery.task(name='tasks.exports.export_admin_applications_csv', bind=True, max_retries=3)
-def export_admin_applications_csv(self):#all applications csv
+def export_admin_applications_csv(self, status=None):#all applications csv
     from flask import current_app
 
     try:
@@ -130,15 +133,18 @@ def export_admin_applications_csv(self):#all applications csv
         from models.student import StudentProfile
         from models.placement import Placement
 
-        results = (
+        query = (
             db.session.query(Application, PlacementDrive, CompanyProfile, StudentProfile, Placement)
             .join(PlacementDrive, Application.drive_id == PlacementDrive.id)
             .join(CompanyProfile, PlacementDrive.company_id == CompanyProfile.id)
             .join(StudentProfile, Application.student_id == StudentProfile.id)
             .outerjoin(Placement, Application.id == Placement.application_id)
-            .order_by(Application.application_date.desc())
-            .all()
         )
+
+        if status:
+            query = query.filter(Application.status == status)
+
+        results = query.order_by(Application.application_date.desc()).all()
 
         export_dir = os.path.join(current_app.root_path, 'exports')
         os.makedirs(export_dir, exist_ok=True)

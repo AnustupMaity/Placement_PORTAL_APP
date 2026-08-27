@@ -16,6 +16,7 @@ class Placement(db.Model):
     position = Column(String(200))
     salary = Column(String(50))
     joining_date = Column(Date, nullable=True)
+    joining_location = Column(String(200), nullable=True)
     offer_letter_path = Column(String(500), nullable=True)
     student_signature_path = Column(String(500), nullable=True)
     company_signature_path = Column(String(500), nullable=True)
@@ -61,6 +62,7 @@ class Placement(db.Model):
             'position': self.position,
             'salary': self.salary,
             'joining_date': self.joining_date.isoformat() + 'Z' if self.joining_date else None,
+            'joining_location': self.joining_location,
             'offer_letter_path': self.offer_letter_path,
             'student_signature_path': self.student_signature_path,
             'company_signature_path': self.company_signature_path,

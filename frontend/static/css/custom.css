@@ -263,6 +263,12 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
   transform: scale(0.98);
 }
 
+.btn-sm {
+  padding: 0.35rem 0.85rem;
+  font-size: 0.8rem;
+  border-radius: var(--ppa-radius-xs);
+}
+
 .btn-primary, .btn-gradient {
   background: var(--ppa-gradient-primary);
   border: none;
@@ -567,6 +573,9 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
 .ppa-table {
   margin-bottom: 0;
   font-size: 0.88rem;
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
 }
 
 .ppa-table thead th {
@@ -579,6 +588,14 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
   padding: 0.85rem 1rem;
   border-bottom: 1px solid var(--ppa-border);
   white-space: nowrap;
+}
+
+.ppa-table thead th:first-child {
+  border-top-left-radius: var(--ppa-radius-sm);
+}
+
+.ppa-table thead th:last-child {
+  border-top-right-radius: var(--ppa-radius-sm);
 }
 
 .ppa-table tbody td {

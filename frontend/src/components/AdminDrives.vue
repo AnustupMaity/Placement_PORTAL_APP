@@ -10,7 +10,19 @@
     <div class="ppa-card">
       <div class="card-header d-flex justify-content-between align-items-center">
         <span>Placement Drives</span>
-        <div class="d-flex gap-2">
+        <div class="d-flex gap-2 align-items-center">
+          <div class="dropdown">
+            <button class="btn btn-sm btn-outline-primary dropdown-toggle" type="button" data-bs-toggle="dropdown" :disabled="exporting">
+              <span v-if="exporting" class="spinner-border spinner-border-sm me-1"></span>
+              <i v-else class="bi bi-download me-1"></i> Export Data
+            </button>
+            <ul class="dropdown-menu shadow-sm">
+              <li><h6 class="dropdown-header">Export Applications</h6></li>
+              <li><button class="dropdown-item" @click="exportCSV('all')">Export All</button></li>
+              <li><button class="dropdown-item" @click="exportCSV('selected')">Export Selected Only</button></li>
+              <li><button class="dropdown-item" @click="exportCSV('shortlisted')">Export Shortlisted Only</button></li>
+            </ul>
+          </div>
           <select v-model="statusFilter" class="form-select form-select-sm" style="max-width: 150px;">
             <option value="all">All Drives</option>
             <option value="active">Active</option>
@@ -230,6 +242,7 @@ export default {
     const loading = ref(true);
     const searchQuery = ref('');
     const statusFilter = ref('all');
+    const exporting = ref(false);
     const { proxy } = getCurrentInstance();
     const route = useRoute();
     if (route.query.q) {
@@ -340,6 +353,62 @@ export default {
       return result;
     });
 
+    const exportCSV = async (status) => {
+      exporting.value = true;
+      try {
+        const payload = status === 'all' ? {} : { status };
+        const res = await axios.post('/api/export/admin/applications', payload);
+        
+        if (res.data.filename) {
+          downloadFile(res.data.filename);
+        } else if (res.data.task_id) {
+          proxy.$toast(`Export (${status}) started. Processing...`, 'info');
+          pollExportStatus(res.data.task_id);
+        }
+      } catch (err) {
+        proxy.$toast('Failed to start export.', 'error');
+        exporting.value = false;
+      }
+    };
+
+    const pollExportStatus = (taskId) => {
+      const interval = setInterval(async () => {
+        try {
+          const res = await axios.get(`/api/export/status/${taskId}`);
+          if (res.data.status === 'SUCCESS') {
+            clearInterval(interval);
+            downloadFile(res.data.result);
+          } else if (res.data.status === 'FAILURE') {
+            clearInterval(interval);
+            exporting.value = false;
+            proxy.$toast('Export failed during processing.', 'error');
+          }
+        } catch (err) {
+          clearInterval(interval);
+          exporting.value = false;
+          proxy.$toast('Error checking export status.', 'error');
+        }
+      }, 2000);
+    };
+
+    const downloadFile = async (filename) => {
+      try {
+        const response = await axios.get(`/api/export/download/${filename}`, { responseType: 'blob' });
+        const url = window.URL.createObjectURL(new Blob([response.data]));
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', filename);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        proxy.$toast('Export downloaded successfully.', 'success');
+      } catch (err) {
+        proxy.$toast('Failed to download the exported file.', 'error');
+      } finally {
+        exporting.value = false;
+      }
+    };
+
     onMounted(loadDrives);
 
     return { 
@@ -358,7 +427,9 @@ export default {
       selectedStudent,
       studentApplications,
       loadingStudentDetails,
-      viewStudentInfo
+      viewStudentInfo,
+      exporting,
+      exportCSV
     };
   }
 }

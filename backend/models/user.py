@@ -18,6 +18,10 @@ class User(db.Model):#user auth for diff roles
     password_hash = Column(String(256), nullable=False)
     role = Column(String(20), nullable=False) 
     is_active = Column(Boolean, default=True)
+    signature_path = Column(String(500), nullable=True)
+    institute_name = Column(String(200), nullable=True)
+    institute_logo_url = Column(String(500), nullable=True)
+    institute_address = Column(String(500), nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
 
     # 1 user 1 role
@@ -51,6 +55,10 @@ class User(db.Model):#user auth for diff roles
             'email': self.email,
             'role': self.role,
             'is_active': self.is_active,
+            'signature_path': self.signature_path,
+            'institute_name': self.institute_name,
+            'institute_logo_url': self.institute_logo_url,
+            'institute_address': self.institute_address,
             'created_at': self.created_at.isoformat() + 'Z' if self.created_at else None,
         }
 

@@ -98,7 +98,7 @@ def update_profile():
     updatable_fields = [
         'company_name', 'industry', 'website', 'location',
         'description', 'hr_name', 'hr_email', 'hr_phone',
-        'logo_url', 'signature_path',
+        'logo_url', 'signature_path', 'offer_template'
     ]
 
     for field in updatable_fields:
@@ -388,7 +388,7 @@ def update_application_status(id):#plmt drive-- studnt appn ..reject select inte
         return jsonify({'error': f'Application is already {application.status} and cannot be changed.'}), 400
 
     new_status = data.get('status')
-    valid_statuses = ['shortlisted', 'interview', 'selected', 'rejected']
+    valid_statuses = ['shortlisted', 'test_invited', 'interview', 'selected', 'rejected']
     if new_status not in valid_statuses:
         return jsonify({
             'message': f'Invalid status. Must be one of: {", ".join(valid_statuses)}',
@@ -400,7 +400,40 @@ def update_application_status(id):#plmt drive-- studnt appn ..reject select inte
         application.feedback = data['feedback']
 
     if new_status == 'interview':
-        pass
+        interview_date_str = data.get('interview_scheduled')
+        if interview_date_str:
+            try:
+                application.interview_scheduled = datetime.fromisoformat(interview_date_str.replace('Z', '+00:00'))
+            except ValueError:
+                pass
+        application.interview_link = data.get('interview_link')
+        
+        # Trigger email if task exists
+        from tasks.emails import send_interview_invite_email
+        if application.interview_scheduled:
+            date_formatted = application.interview_scheduled.strftime('%B %d, %Y at %I:%M %p')
+            send_interview_invite_email.delay(
+                application.id, 
+                application.interview_link or "Will be shared separately", 
+                date_formatted, 
+                data.get('custom_message', '')
+            )
+            
+    if new_status == 'test_invited':
+        test_date_str = data.get('test_scheduled')
+        if test_date_str:
+            try:
+                application.test_scheduled = datetime.fromisoformat(test_date_str.replace('Z', '+00:00'))
+            except ValueError:
+                pass
+        application.test_link = data.get('test_link')
+        
+        from tasks.emails import send_test_link_email
+        send_test_link_email.delay(
+            application.id,
+            application.test_link or "Will be shared separately",
+            data.get('custom_message', '')
+        )
 
     #if studnt selected...make plmt record 
     if new_status == 'selected':
@@ -431,6 +464,49 @@ def update_application_status(id):#plmt drive-- studnt appn ..reject select inte
     cache_delete_pattern('students:*')
 
     return jsonify({'message': f'Application status updated to {new_status}'}), 200
+
+@company_bp.route('/api/company/applications/bulk-status', methods=['PUT'])
+@token_required
+@role_required('company')
+def bulk_update_status():
+    company = _get_company_profile()
+    if not company:
+        return jsonify({'error': 'Company profile not found'}), 404
+
+    data = request.get_json(silent=True) or {}
+    app_ids = data.get('application_ids', [])
+    new_status = data.get('status')
+
+    valid_statuses = ['shortlisted', 'rejected']
+    if new_status not in valid_statuses:
+        return jsonify({'error': f'Invalid status. Must be one of: {", ".join(valid_statuses)}'}), 400
+
+    if not app_ids:
+        return jsonify({'error': 'No applications selected.'}), 400
+
+    apps = Application.query.filter(Application.id.in_(app_ids)).all()
+    updated_count = 0
+    drive_id = None
+    
+    for app in apps:
+        if app.drive.company_id == company.id and app.status not in ['selected', 'rejected']:
+            app.status = new_status
+            updated_count += 1
+            if not drive_id:
+                drive_id = app.drive_id
+
+    db.session.commit()
+    
+    # Invalidate caches
+    cache_delete('admin:dashboard')
+    cache_delete_pattern('drives:*')
+    
+    # If shortlisted, optionally notify admin
+    if new_status == 'shortlisted' and data.get('notify_admin') and drive_id:
+        from tasks.emails import send_shortlist_to_admin_email
+        send_shortlist_to_admin_email.delay(drive_id, company.company_name)
+
+    return jsonify({'message': f'Successfully updated {updated_count} applications.'}), 200
 
 #plmt record for comp
 

@@ -14,14 +14,28 @@
     <div v-else class="ppa-card" style="max-width: 800px;">
       <div class="card-body">
         <form @submit.prevent="handleUpdate">
-          <div class="row">
-            <div class="col-md-6 mb-3">
-              <label class="form-label-dark">Company Name *</label>
-              <input type="text" class="form-control" v-model="form.company_name" required>
+          <div class="row align-items-center mb-4">
+            <div class="col-md-2 text-center">
+              <div class="position-relative d-inline-block">
+                <img :src="form.logo_url || 'https://via.placeholder.com/100?text=Logo'" alt="Company Logo" class="border rounded" style="width: 100px; height: 100px; object-fit: contain; background: #fff;">
+                <label class="btn btn-sm btn-primary position-absolute bottom-0 end-0 shadow-sm" style="padding: 0.25rem 0.5rem; cursor: pointer; border-radius: 50%;">
+                  <i class="bi bi-camera"></i>
+                  <input type="file" accept="image/png, image/jpeg, image/jpg, image/webp" @change="handleLogoUpload" class="d-none" :disabled="uploadingLogo">
+                </label>
+              </div>
+              <div v-if="uploadingLogo" class="small text-muted mt-1"><span class="spinner-border spinner-border-sm me-1"></span>Uploading...</div>
             </div>
-            <div class="col-md-6 mb-3">
-              <label class="form-label-dark">Industry</label>
-              <input type="text" class="form-control" v-model="form.industry">
+            <div class="col-md-10">
+              <div class="row">
+                <div class="col-md-6 mb-3">
+                  <label class="form-label-dark">Company Name *</label>
+                  <input type="text" class="form-control" v-model="form.company_name" required>
+                </div>
+                <div class="col-md-6 mb-3">
+                  <label class="form-label-dark">Industry</label>
+                  <input type="text" class="form-control" v-model="form.industry">
+                </div>
+              </div>
             </div>
           </div>
 
@@ -91,6 +105,19 @@
             </div>
           </div>
 
+          <!-- WYSIWYG Offer Letter Template -->
+          <div class="card mb-4 border bg-light">
+            <div class="card-body">
+              <div class="d-flex justify-content-between align-items-center mb-1">
+                <label class="form-label-dark fw-bold mb-0"><i class="bi bi-file-earmark-richtext me-2"></i>Custom Offer Letter Template</label>
+                <span class="badge bg-secondary bg-opacity-25 text-dark">Optional</span>
+              </div>
+              <p class="text-muted small mb-3">Design a customized offer letter that will be generated as a PDF for selected candidates. Use the dropdown to insert variables like student name, salary, etc.</p>
+              
+              <OfferLetterEditor v-model="form.offer_template" />
+            </div>
+          </div>
+
           <button type="submit" class="btn btn-gradient w-100" :disabled="saving">
             <span v-if="saving" class="spinner-border spinner-border-sm me-2"></span>
             Update Profile
@@ -103,14 +130,19 @@
 
 <script>
 import { ref, onMounted, getCurrentInstance } from 'vue';
+import OfferLetterEditor from './OfferLetterEditor.vue';
 
 export default {
   name: 'CompanyProfile',
+  components: {
+    OfferLetterEditor
+  },
   setup() {
     const { proxy } = getCurrentInstance();
     const loading = ref(true);
     const saving = ref(false);
     const uploadingSig = ref(false);
+    const uploadingLogo = ref(false);
     const form = ref({});
 
     const loadProfile = async () => {
@@ -151,6 +183,33 @@ export default {
       }
     };
 
+    const handleLogoUpload = async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const validTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp'];
+      if (!validTypes.includes(file.type)) {
+        proxy.$toast('Please select a valid image.', 'error');
+        return;
+      }
+
+      uploadingLogo.value = true;
+      const formData = new FormData();
+      formData.append('file', file);
+
+      try {
+        const res = await axios.post('/api/upload/image', formData, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
+        form.value.logo_url = res.data.file_url;
+        proxy.$toast('Company logo uploaded! Click Update Profile to save.', 'success');
+      } catch (err) {
+        proxy.$toast(err.response?.data?.error || 'Failed to upload logo.', 'error');
+      } finally {
+        uploadingLogo.value = false;
+      }
+    };
+
     const removeSignature = () => {
       form.value.signature_path = null;
       proxy.$toast('Company signature removed. Click Update Profile to save.', 'info');
@@ -170,7 +229,7 @@ export default {
 
     onMounted(loadProfile);
 
-    return { form, loading, saving, uploadingSig, handleSignatureUpload, removeSignature, handleUpdate };
+    return { form, loading, saving, uploadingSig, uploadingLogo, handleSignatureUpload, handleLogoUpload, removeSignature, handleUpdate };
   }
 }
 </script>

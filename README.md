@@ -19,15 +19,14 @@
 
 ## 📌 Table of Contents
 - [Overview](#-overview)
-- [Key Features](#-key-features)
+- [New Features & "Enterprise" Upgrades](#-new-features--enterprise-upgrades)
 - [Architecture & Tech Stack](#-architecture--tech-stack)
 - [End-to-End Workflows](#-end-to-end-workflows)
 - [System Architecture Diagram](#-system-architecture-diagram)
-- [Recruitment Pipeline Flowchart](#-recruitment-pipeline-flowchart)
 - [Database Schema](#-database-schema)
-- [Project Directory Structure](#-project-directory-structure)
 - [Installation & Quickstart Guide](#-installation--quickstart-guide)
-- [API Endpoints Overview](#-api-endpoints-overview)
+- [Admin Configuration & Initial Setup](#-admin-configuration--initial-setup)
+- [Deployment Guide](#-deployment-guide)
 - [License](#-license)
 
 ---
@@ -40,45 +39,35 @@ The platform features modern authentication (**JWT + Google OAuth**), **digital 
 
 ---
 
-## 🚀 Key Features
+## 🚀 New Features & "Enterprise" Upgrades
 
-### 👤 1. Role-Based Portals & Dashboards
-- **🎓 Student Portal**:
-  - Browse approved placement drives with eligibility checks (CGPA, Branch, Batch).
-  - One-click application submission with resume linkage.
-  - Interactive **Application Status Stepper** (`Applied` ➔ `Shortlisted` ➔ `Interview` ➔ `Selected` ➔ `Signed & Accepted`).
-  - **Mandatory Digital Signature Acceptance**: Accept job offers with live canvas signature drawing or PNG/JPEG image upload.
-  - Download official **Letter of Acceptance** and **Offer Letter** PDFs.
-  - Manage student profile, academic records, and default signature.
+### 📊 1. Advanced Analytics Dashboard (Admin)
+- Integration with **Chart.js** provides a high-level overview of placement statistics.
+- **Placements by Branch** (Bar Chart): Shows how many students are placed from each academic branch.
+- **Salary Trends** (Line Chart): Tracks the average salary packages offered across drives.
+- **Top Recruiters** (Horizontal Bar Chart): A leaderboard of companies hiring the most students.
 
-- **🏢 Company Recruiter Portal**:
-  - Profile registration with administrative verification gatekeeper.
-  - Create and manage placement drives with salary packages, job descriptions, deadlines, and eligibility criteria.
-  - Applicant pipeline review with status transitions and remarks.
-  - Upload authorized signatory signature for automated embedding onto Offer Letters.
-  - View real-time placement statistics and candidate acceptance records.
+### 📝 2. WYSIWYG Offer Letter Builder
+- Companies can design **Custom Offer Letters** directly in their Company Profile using a Rich Text Editor.
+- Support for dynamic variables (e.g., `{{ student_name }}`, `{{ position }}`, `{{ salary }}`).
+- Automated PDF generation replaces standard templates with the company's bespoke design.
 
-- **🛡️ Admin (TPO / Institute) Portal**:
-  - Global overview dashboard with dynamic recruitment metrics and charts.
-  - Review, approve, or reject new company registrations.
-  - Moderate placement drives and monitor student application counts.
-  - Full audit trail of verified placements with candidate and recruiter signature previews.
-  - Manage student records, blacklisting controls, and institute-wide reporting.
+### 💬 3. Interview Experience Hub (Community Board)
+- A community forum where placed students can post their **Interview Experiences** to help juniors prepare.
+- Supports **Anonymous Posting** and full administrative moderation controls.
 
-### ✍️ 2. Digital Signatures & PDF Generation
-- **Dual Signature Verification**: Supports candidate digital acceptance signatures and company authorized signatory signatures.
-- **Canvas Signature Drawing**: Interactive touch/mouse drawing pad with clear and redo controls.
-- **Image Signature Upload**: Supports `.png`, `.jpg`, `.jpeg`, `.webp` (up to 5MB) with base64 Data URI conversion.
-- **Executive PDF Letterhead**: High-resolution, corporate-styled **Offer Letter** and **Letter of Acceptance** documents rendered dynamically with signature embeds.
+### 📅 4. Interview & Test Scheduling with Automated Emails
+- Companies can now directly **schedule interviews** or send **test links** through the applicant management pipeline.
+- Actions automatically trigger **Celery Background Workers** to send professional email invitations to candidates, keeping the UI fast and non-blocking.
 
-### 🔐 3. Authentication & Security
-- **Google Sign-In / OAuth**: Integrated Google Identity Services (GIS) for 1-click authentication and automated user provisioning.
-- **JWT Authentication**: Secure stateless token authentication with expiration and role-based access control (RBAC).
-- **Password Security**: Cryptographic hashing using PBKDF2 / bcrypt.
+### 🔔 5. Advanced Bulk Actions & Live Notifications
+- **Bulk Application Processing**: Companies can bulk shortlist or bulk reject applicants.
+- **Admin Escalation**: When shortlisting, companies can choose to automatically notify the Admin (TPO) to keep the institution in the loop.
+- **Notification Center**: A live "bell" icon in the navbar tracks unread alerts across all roles (e.g., Offers, Interview Invites, Application Status Updates).
 
-### ⚡ 4. Real-time Notifications & Async Jobs
-- **Live Notifications Center**: Dynamic navbar drawer alerting users to new offers, application status changes, and drive postings.
-- **Asynchronous Data Exports**: Celery background workers for generating heavy CSV export archives without blocking the user interface.
+### 🏛️ 6. Institute Settings configuration
+- Administrators can now personalize the portal through the **Institute Settings** profile page.
+- Manage global **Institute Name**, **Institute Address**, and upload an **Institute Logo** that is dynamically reflected across the app.
 
 ---
 
@@ -92,8 +81,7 @@ The platform features modern authentication (**JWT + Google OAuth**), **digital 
 | **SFC Dynamic Loader** | `vue3-sfc-loader` | In-browser dynamic runtime compilation of `.vue` files without heavy Node.js build steps |
 | **Styling & UI** | Vanilla CSS3, Bootstrap 5.3, Bootstrap Icons | Custom design system with glassmorphism, gradients, and micro-interactions |
 | **PDF Generation** | `xhtml2pdf` | Server-side HTML-to-PDF rendering with embedded Base64 signatures |
-| **Task Queue & Broker** | Celery 5.x & Redis | Background job processing, periodic tasks, and caching |
-| **Authentication** | PyJWT & Google Identity Services | Stateless JSON Web Tokens & Google OAuth 2.0 |
+| **Task Queue & Broker** | Celery 5.x & Redis | Background job processing, scheduled emails, and caching |
 
 ---
 
@@ -113,6 +101,7 @@ sequenceDiagram
     Company->>Portal: Create Placement Drive (Role, CTC, Eligibility)
     Admin->>Portal: Approve Placement Drive
     Student->>Portal: Browse Drives & Submit Application
+    Company->>Portal: Schedule Interview / Test (Celery Email Triggered)
     Company->>Portal: Review Applicant ➔ Update Status to "Selected"
     Note over Portal: Auto-generates Placement Offer record
     Student->>Portal: Receives Offer Alert ➔ Opens Offer Acceptance Modal
@@ -124,105 +113,12 @@ sequenceDiagram
 
 ---
 
-## 📊 System Architecture Diagram
-
-```mermaid
-graph TD
-    subgraph Client Layer
-        Browser["Vue 3 SPA (Runtime SFC Loader)"]
-        UI["Bootstrap 5 + Custom Design System"]
-        GIS["Google Identity Services (OAuth)"]
-    end
-
-    subgraph API & Application Layer
-        Flask["Flask REST API Core"]
-        AuthBP["Auth & Google OAuth Blueprint"]
-        StdBP["Student Portal Blueprint"]
-        CompBP["Company Portal Blueprint"]
-        AdminBP["Admin Management Blueprint"]
-        ExportBP["xhtml2pdf Export Engine"]
-        UploadBP["Secure Uploads Engine"]
-    end
-
-    subgraph Data & Async Layer
-        DB[(SQLite Relational Database)]
-        Celery["Celery Asynchronous Workers"]
-        Redis[("Redis Broker & Cache")]
-    end
-
-    Browser <-->|JSON REST APIs| Flask
-    Flask --> AuthBP & StdBP & CompBP & AdminBP & ExportBP & UploadBP
-    AuthBP & StdBP & CompBP & AdminBP <-->|SQLAlchemy ORM| DB
-    ExportBP -->|Renders PDF| DB
-    Flask <-->|Dispatches Tasks| Celery
-    Celery <--> Redis
-```
-
----
-
-## 📁 Project Directory Structure
-
-```text
-Placement_PORTAL_APP/
-├── backend/
-│   ├── app.py                     # Flask Application Factory & Server Entry Point
-│   ├── config.py                  # Environment & App Configuration
-│   ├── extensions.py              # DB, Celery, Mail, Redis Initializers
-│   ├── reset.py                   # Database Seeding & Mock Data Generator
-│   ├── requirements.txt           # Python Dependencies
-│   ├── models/                    # SQLAlchemy Database Models
-│   │   ├── user.py                # User & Authentication Model
-│   │   ├── student.py             # Student Profile Model
-│   │   ├── company.py             # Company Profile Model
-│   │   ├── drive.py               # Placement Drive Model
-│   │   ├── application.py         # Job Application Model
-│   │   └── placement.py           # Final Placement & Signature Model
-│   ├── routes/                    # REST API Endpoints
-│   │   ├── auth.py                # Login, Register, Google OAuth, Notifications
-│   │   ├── student.py             # Student Operations & Offer Acceptance
-│   │   ├── company.py             # Company Management & Drive Operations
-│   │   ├── admin.py               # Institute Admin Control Center
-│   │   ├── export.py              # PDF Letter Generation & CSV Status
-│   │   └── upload.py              # Signature & Asset File Uploads
-│   ├── tasks/                     # Celery Background Tasks
-│   │   ├── exports.py             # CSV Export Background Workers
-│   │   ├── reminders.py           # Scheduled Email & Notification Reminders
-│   │   └── reports.py             # Monthly Analytics Report Generators
-│   ├── templates/                 # HTML Templates & PDF Layouts
-│   │   ├── index.html             # Single Page Application Entry HTML
-│   │   ├── offer_letter.html      # Executive Offer Letter PDF Template
-│   │   └── acceptance_letter.html # Signed Letter of Acceptance PDF Template
-│   └── utils/                     # Helpers, Decorators, and Security
-│       ├── decorators.py          # JWT @token_required & @role_required
-│       ├── upload.py              # Signature Storage & Base64 Converter
-│       └── validators.py          # Data Validation Utilities
-├── frontend/
-│   ├── src/
-│   │   ├── app.js                 # Vue 3 App Initialization & Axios Interceptors
-│   │   ├── router.js              # Vue Router Routes & Navigation Guards
-│   │   └── components/            # Vue Single File Components (.vue)
-│   │       ├── Navbar.vue         # Navigation Bar with Notification Center
-│   │       ├── Login.vue          # Modern Glassmorphic Login with Google OAuth
-│   │       ├── Register.vue       # Student & Company Registration
-│   │       ├── StudentHistory.vue # Offer Acceptance & Signature Canvas Modal
-│   │       ├── StudentApplications.vue # Application Pipeline & Stepper
-│   │       ├── CompanyPlacements.vue   # Placement Roster & Signature Previews
-│   │       └── AdminPlacements.vue     # Institute Placement Registry
-│   └── static/
-│       └── css/
-│           └── custom.css         # Modern Design System (Plus Jakarta Sans & Inter)
-├── LICENSE                        # MIT Open Source License
-└── README.md                      # Project Documentation
-```
-
----
-
 ## ⚡ Installation & Quickstart Guide
 
 ### Prerequisites
 - **Python 3.10+**
 - **pip** package manager
-- *(Optional)* **Redis** server for background Celery tasks
+- *(Optional but Recommended)* **Redis** server for background Celery tasks and email notifications.
 
 ### 1. Clone the Repository
 ```bash
@@ -258,34 +154,53 @@ python backend/app.py
 Open your browser and navigate to:
 👉 **`http://127.0.0.1:5000`**
 
-*(Note: No Node.js / npm build step is required. The Vue 3 application compiles dynamically in the browser).*
+*(Note: No Node.js / npm build step is required. The Vue 3 frontend is served directly by Flask and compiles dynamically in the browser).*
 
 ---
 
-## 🔑 Demo Login Credentials (Seeded)
+## 🔑 Admin Configuration & Initial Setup
 
-| Role | Username | Password | Access Level |
-| :--- | :--- | :--- | :--- |
-| **🛡️ Admin** | `admin` | `admin123` | Full Institute Management |
-| **🎓 Student** | `test_student_sig` | `pass123` | Student Dashboard & Offer Acceptance |
-| **🏢 Company** | `test_comp_sig` | `pass123` | Recruiter Dashboard & Applicant Pipeline |
+When you deploy or fork this application, you can set your own unique Administrator credentials using Environment Variables. If not provided, it falls back to the default credentials.
+
+**Environment Variables for Admin Seed:**
+- `PPA_ADMIN_USER` (Default: `admin`)
+- `PPA_ADMIN_EMAIL` (Default: `admin@ppa.com`)
+- `PPA_ADMIN_PASSWORD` (Default: `admin123`)
+
+**Example (Linux/macOS):**
+```bash
+export PPA_ADMIN_USER="director"
+export PPA_ADMIN_PASSWORD="SecurePassword2026!"
+python backend/app.py
+```
+
+*Note: Once logged in as the Administrator, navigate to **Institute Settings** from your profile dropdown to configure your Institute's Name, Address, and Logo.*
 
 ---
 
-## 📡 API Endpoints Overview
+## 🚀 Deployment Guide
 
-| Method | Endpoint | Description | Access |
-| :--- | :--- | :--- | :--- |
-| `POST` | `/api/auth/login` | Authenticate with username/password | Public |
-| `POST` | `/api/auth/google` | Authenticate / Register with Google OAuth | Public |
-| `POST` | `/api/auth/register/student` | Register student account | Public |
-| `POST` | `/api/auth/register/company` | Register company account (Pending approval) | Public |
-| `GET` | `/api/notifications` | Dynamic live notification alerts | Authenticated |
-| `POST` | `/api/upload/signature` | Upload signature image (`.png`, `.jpg`, `.webp`) | Authenticated |
-| `PUT` | `/api/student/placements/<id>/accept` | Sign and accept employment offer | Student |
-| `GET` | `/api/export/offer_letter/<id>` | Generate official Offer Letter PDF | Authorized |
-| `GET` | `/api/export/acceptance_letter/<id>` | Generate signed Letter of Acceptance PDF | Authorized |
-| `GET` | `/api/admin/placements` | List institute placement records | Admin |
+This application is designed as a **Monolith**, meaning the Flask backend automatically serves the Vue.js frontend static files and API routes together. This makes deployment incredibly simple across any standard Python hosting platform.
+
+### Deploying to Render, Heroku, or PythonAnywhere
+
+1. **Database Considerations**: For production, update `SQLALCHEMY_DATABASE_URI` in `backend/config.py` from SQLite to a robust database like PostgreSQL or MySQL.
+2. **Web Server**: Use `gunicorn` to run the application instead of the built-in Flask development server.
+   ```bash
+   pip install gunicorn
+   gunicorn -w 4 -b 0.0.0.0:5000 backend.app:app
+   ```
+3. **Environment Variables Needed**:
+   - `SECRET_KEY`: Set a secure random string for JWT and sessions.
+   - `MAIL_SERVER`, `MAIL_PORT`, `MAIL_USERNAME`, `MAIL_PASSWORD`: SMTP credentials for Celery email workers.
+   - `REDIS_URL`: The URL to your managed Redis instance (required for background tasks like emails and CSV exports).
+4. **Running Background Workers**:
+   Ensure you run a secondary worker process for Celery alongside your web process:
+   ```bash
+   celery -A backend.app.celery worker --loglevel=info
+   ```
+
+Because `backend/app.py` has a `serve_catch_all` route that automatically renders `index.html` for any unrecognized non-API routes, your Vue.js Single Page Application routing (history mode) will work flawlessly in production without needing a separate NGINX block!
 
 ---
 

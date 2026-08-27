@@ -21,6 +21,7 @@ class CompanyProfile(db.Model): # comp to particlar user
     hr_phone = Column(String(20))
     logo_url = Column(String(500))
     signature_path = Column(String(500), nullable=True)
+    offer_template = Column(Text, nullable=True)
     approval_status = Column(String(20), default='pending')  # pending , approved , rejected
     is_blacklisted = Column(Boolean, default=False)
     created_at = Column(DateTime, default=datetime.utcnow)
@@ -45,6 +46,7 @@ class CompanyProfile(db.Model): # comp to particlar user
             'hr_phone': self.hr_phone,
             'logo_url': self.logo_url,
             'signature_path': self.signature_path,
+            'offer_template': self.offer_template,
             'approval_status': self.approval_status,
             'is_blacklisted': self.is_blacklisted,
             'created_at': self.created_at.isoformat() + 'Z' if self.created_at else None,

@@ -28,6 +28,8 @@ def create_app(config_class=Config):
     # seed db table + admin + migrations
     with app.app_context():#all model import
         import models
+        import models.community
+        import models.message
         db.create_all()
         _migrate_db_columns()
         _seed_admin()
@@ -71,6 +73,26 @@ def _register_blueprints(app):#blueprint all routes
     except ImportError:
         app.logger.info('export bp missing')
 
+    try:
+        from routes.notifications import notifications_bp
+        app.register_blueprint(notifications_bp)
+    except ImportError as e:
+        app.logger.warning(f"Could not load notifications routes: {e}")
+
+    try:
+        from routes.community import community_bp
+        app.register_blueprint(community_bp)
+        app.logger.info("Registered community blueprint")
+    except ImportError as e:
+        app.logger.warning(f"Could not load community routes: {e}")
+
+    try:
+        from routes.messages import messages_bp
+        app.register_blueprint(messages_bp)
+        app.logger.info("Registered messages blueprint")
+    except ImportError as e:
+        app.logger.warning(f"Could not load messages routes: {e}")
+
 
 def _migrate_db_columns():
     """Ensure SQLite columns for signature support exist in existing tables."""
@@ -98,6 +120,16 @@ def _migrate_db_columns():
             if 'signature_path' not in existing_std_cols:
                 conn.execute(text("ALTER TABLE student_profiles ADD COLUMN signature_path VARCHAR(500)"))
 
+            # users columns
+            res_usr = conn.execute(text("PRAGMA table_info(users)")).fetchall()
+            existing_usr_cols = [r[1] for r in res_usr]
+            if 'institute_name' not in existing_usr_cols:
+                conn.execute(text("ALTER TABLE users ADD COLUMN institute_name VARCHAR(200)"))
+            if 'institute_logo_url' not in existing_usr_cols:
+                conn.execute(text("ALTER TABLE users ADD COLUMN institute_logo_url VARCHAR(500)"))
+            if 'institute_address' not in existing_usr_cols:
+                conn.execute(text("ALTER TABLE users ADD COLUMN institute_address VARCHAR(500)"))
+
             conn.commit()
     except Exception as e:
         print(f"Migration note: {e}")
@@ -108,15 +140,19 @@ def _seed_admin():
     from models.user import User
 
     if User.query.filter_by(role='admin').first() is None:
+        admin_user = os.environ.get('PPA_ADMIN_USER', 'admin')
+        admin_email = os.environ.get('PPA_ADMIN_EMAIL', 'admin@ppa.com')
+        admin_pass = os.environ.get('PPA_ADMIN_PASSWORD', 'admin123')
+        
         admin = User(
-            username='admin',
-            email='admin@ppa.com',
+            username=admin_user,
+            email=admin_email,
             role='admin',
         )
-        admin.set_password('admin123')
+        admin.set_password(admin_pass)
         db.session.add(admin)
         db.session.commit()
-        print('admin / admin123')
+        print(f'Admin account seeded: {admin_user} / {admin_pass}')
 
 
 # frontend route

@@ -120,6 +120,71 @@
           </div>
         </div>
       </div>
+      <div class="row g-4 mt-1">
+        <div class="col-md-4">
+          <div class="ppa-card h-100 d-flex flex-column border-primary">
+            <div class="card-header bg-primary text-white"><i class="bi bi-bar-chart-fill me-2"></i>Placements by Branch</div>
+            <div class="card-body flex-grow-1 text-center d-flex align-items-center justify-content-center">
+              <canvas id="placementsByBranchChart" style="max-height: 250px;"></canvas>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="ppa-card h-100 d-flex flex-column border-success">
+            <div class="card-header bg-success text-white"><i class="bi bi-graph-up me-2"></i>Salary Trends (LPA)</div>
+            <div class="card-body flex-grow-1 text-center d-flex align-items-center justify-content-center">
+              <canvas id="salaryTrendsChart" style="max-height: 250px;"></canvas>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="ppa-card h-100 d-flex flex-column border-danger">
+            <div class="card-header bg-danger text-white"><i class="bi bi-star-fill me-2"></i>Top Recruiters</div>
+            <div class="card-body flex-grow-1 text-center d-flex align-items-center justify-content-center">
+              <canvas id="topRecruitersChart" style="max-height: 250px;"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="row g-4 mt-1">
+        <div class="col-12">
+          <div class="ppa-card border-warning">
+            <div class="card-header bg-warning text-dark d-flex justify-content-between align-items-center">
+              <span><i class="bi bi-bell-fill me-2"></i>Recent Notifications</span>
+            </div>
+            <div class="card-body p-0">
+              <div class="list-group list-group-flush">
+                <div v-if="loadingNotifs" class="text-center py-4">
+                  <span class="spinner-border spinner-border-sm text-primary"></span>
+                </div>
+                <div v-else-if="notifications.length === 0" class="text-center py-4 text-muted">
+                  No recent notifications.
+                </div>
+                <a 
+                  v-for="n in notifications.slice(0, 5)" 
+                  :key="n.id" 
+                  :href="n.link || '#'" 
+                  class="list-group-item list-group-item-action d-flex align-items-start gap-3 p-3"
+                  :class="{'bg-light': !n.is_read}"
+                >
+                  <i class="bi fs-4 mt-1" :class="{
+                    'bi-award-fill text-warning': n.title.toLowerCase().includes('offer') || n.title.toLowerCase().includes('selected'),
+                    'bi-calendar-check-fill text-info': n.title.toLowerCase().includes('interview') || n.title.toLowerCase().includes('test'),
+                    'bi-bell-fill text-primary': !n.title.toLowerCase().includes('offer') && !n.title.toLowerCase().includes('interview')
+                  }"></i>
+                  <div>
+                    <div class="d-flex justify-content-between align-items-center w-100 mb-1">
+                      <h6 class="mb-0 fw-bold" :class="{'text-dark': !n.is_read, 'text-muted': n.is_read}">{{ n.title }}</h6>
+                      <small class="text-muted">{{ formatDate(n.created_at) }}</small>
+                    </div>
+                    <p class="mb-0 small" :class="{'text-dark': !n.is_read, 'text-muted': n.is_read}">{{ n.message }}</p>
+                  </div>
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </template>
   </div>
 </template>
@@ -133,7 +198,15 @@ export default {
     const stats = ref({});
     const loading = ref(true);
     const exporting = ref(false);
+    const notifications = ref([]);
+    const loadingNotifs = ref(true);
     const { proxy } = getCurrentInstance();
+
+    const formatDate = (dateStr) => {
+      if (!dateStr) return '';
+      const d = new Date(dateStr);
+      return d.toLocaleDateString() + ' ' + d.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+    };
 
     const loadStats = async () => {
       try {
@@ -195,8 +268,77 @@ export default {
             }
           });
         }
+
+        // Advanced Analytics Charts
+        if (data.charts) {
+          // Placements by Branch (Bar)
+          if (document.getElementById('placementsByBranchChart') && data.charts.placements_by_branch.labels.length) {
+            new Chart(document.getElementById('placementsByBranchChart'), {
+              type: 'bar',
+              data: {
+                labels: data.charts.placements_by_branch.labels,
+                datasets: [{
+                  label: 'Placements',
+                  data: data.charts.placements_by_branch.data,
+                  backgroundColor: '#2c63ff',
+                  maxBarThickness: 40
+                }]
+              }
+            });
+          }
+
+          // Top Recruiters (Bar/Horizontal)
+          if (document.getElementById('topRecruitersChart') && data.charts.top_recruiters.labels.length) {
+            new Chart(document.getElementById('topRecruitersChart'), {
+              type: 'bar',
+              options: { indexAxis: 'y' },
+              data: {
+                labels: data.charts.top_recruiters.labels,
+                datasets: [{
+                  label: 'Hires',
+                  data: data.charts.top_recruiters.data,
+                  backgroundColor: '#fd3995',
+                  maxBarThickness: 30
+                }]
+              }
+            });
+          }
+
+          // Salary Trends (Line)
+          if (document.getElementById('salaryTrendsChart') && data.charts.salary_trends.labels.length) {
+            new Chart(document.getElementById('salaryTrendsChart'), {
+              type: 'line',
+              data: {
+                labels: data.charts.salary_trends.labels,
+                datasets: [{
+                  label: 'Avg Salary',
+                  data: data.charts.salary_trends.data,
+                  borderColor: '#1dc9b7',
+                  backgroundColor: 'rgba(29, 201, 183, 0.2)',
+                  tension: 0.3,
+                  fill: true
+                }]
+              }
+            });
+          }
+        }
       } catch (err) {
         console.error('Failed to load charts', err);
+      }
+    };
+
+    const loadNotifications = async () => {
+      try {
+        const token = localStorage.getItem('ppa_token') || localStorage.getItem('token');
+        if (!token) return;
+        const res = await axios.get('/api/notifications', {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        notifications.value = res.data || [];
+      } catch (err) {
+        console.error('Failed to load notifications', err);
+      } finally {
+        loadingNotifs.value = false;
       }
     };
 
@@ -274,8 +416,11 @@ export default {
     };
 
     onMounted(async () => {
-        await loadStats();
-        await loadCharts();
+        await Promise.all([
+          loadStats(),
+          loadCharts(),
+          loadNotifications()
+        ]);
     });
 
     return { 
@@ -284,7 +429,10 @@ export default {
       exporting,
       triggerDailyReminders,
       triggerMonthlyReport,
-      exportCSV
+      exportCSV,
+      notifications,
+      loadingNotifs,
+      formatDate
     };
   }
 }

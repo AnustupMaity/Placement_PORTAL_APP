@@ -19,12 +19,31 @@
       </div>
     </div>
 
+    <!-- Bulk Actions Toolbar -->
+    <div v-if="selectedApplicants.length > 0" class="alert alert-primary d-flex align-items-center justify-content-between p-2 mb-3 shadow-sm border-primary border-opacity-25" style="background-color: #f0f7ff;">
+      <div>
+        <span class="badge bg-primary rounded-pill me-2">{{ selectedApplicants.length }}</span> 
+        <span class="fw-medium text-primary">Applicants Selected</span>
+      </div>
+      <div class="d-flex gap-2">
+        <button class="btn btn-sm btn-outline-success bg-white fw-medium" @click="openBulkStatusModal('shortlisted')">Shortlist Selected</button>
+        <button class="btn btn-sm btn-outline-danger bg-white fw-medium" @click="openBulkStatusModal('rejected')">Reject Selected</button>
+        <button class="btn btn-sm btn-outline-primary bg-white fw-medium" @click="openTestLinkModal">Send Test Link</button>
+        <button class="btn btn-sm btn-outline-info bg-white fw-medium" @click="openInterviewModal">Schedule Interview</button>
+      </div>
+    </div>
+
     <div class="ppa-card">
       <div class="card-header">Applicants</div>
       <div class="table-responsive table-wrapper">
         <table class="table ppa-table mb-0 align-middle">
           <thead>
             <tr>
+              <th style="width: 40px;">
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" :checked="isAllSelected" @change="toggleSelectAll">
+                </div>
+              </th>
               <th>Applicant Name</th>
               <th v-if="isGeneralView">Drive</th>
               <th>Branch</th>
@@ -38,6 +57,11 @@
             <tr v-if="loading"><td colspan="7" class="text-center py-4"><span class="ppa-spinner ppa-spinner-sm"></span></td></tr>
             <tr v-else-if="filteredApplications.length === 0"><td colspan="7" class="text-center py-4 text-muted">No applications found.</td></tr>
             <tr v-for="app in filteredApplications" :key="app.id" v-else>
+              <td>
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" :value="app.id" v-model="selectedApplicants">
+                </div>
+              </td>
               <td class="fw-medium">{{ app.full_name }}</td>
               <td v-if="isGeneralView">{{ app.drive_title }}</td>
               <td>{{ app.branch || '-' }}</td>
@@ -178,8 +202,34 @@
                 <i class="bi bi-info-circle-fill me-1"></i> Selecting this candidate creates an official <strong>Placement Offer</strong>. If you have configured an Authorized Signatory Signature in your Company Profile, it will automatically be affixed to their Offer Letter.
               </div>
 
-              <label class="form-label text-muted">Feedback / Remarks (Optional)</label>
-              <textarea class="form-control" v-model="statusFeedback" rows="3" placeholder="Enter feedback here..."></textarea>
+              <div v-if="newStatus === 'interview'" class="mb-3 border p-3 rounded bg-white">
+                <h6 class="fw-bold text-primary mb-2"><i class="bi bi-calendar-event me-2"></i>Schedule Interview</h6>
+                <div class="mb-2">
+                  <label class="form-label text-muted small mb-1">Interview Date & Time</label>
+                  <input type="datetime-local" class="form-control form-control-sm" v-model="statusInterviewDate">
+                </div>
+                <div>
+                  <label class="form-label text-muted small mb-1">Meeting Link (e.g., Google Meet, Zoom)</label>
+                  <input type="url" class="form-control form-control-sm" v-model="statusInterviewLink" placeholder="https://...">
+                </div>
+                <div class="small text-muted mt-2"><i class="bi bi-envelope me-1"></i>An invite email will be sent automatically.</div>
+              </div>
+
+              <div v-if="newStatus === 'test_invited'" class="mb-3 border p-3 rounded bg-white">
+                <h6 class="fw-bold text-primary mb-2"><i class="bi bi-link-45deg me-2"></i>Send Test Link</h6>
+                <div class="mb-2">
+                  <label class="form-label text-muted small mb-1">Test Deadline / Scheduled Time</label>
+                  <input type="datetime-local" class="form-control form-control-sm" v-model="statusTestDate">
+                </div>
+                <div>
+                  <label class="form-label text-muted small mb-1">Test URL</label>
+                  <input type="url" class="form-control form-control-sm" v-model="statusTestLink" placeholder="https://...">
+                </div>
+                <div class="small text-muted mt-2"><i class="bi bi-envelope me-1"></i>An invite email will be sent automatically.</div>
+              </div>
+
+              <label class="form-label text-muted">Feedback / Message to Candidate (Optional)</label>
+              <textarea class="form-control" v-model="statusFeedback" rows="3" placeholder="Enter message here..."></textarea>
             </div>
           </div>
           <div class="modal-footer bg-light">
@@ -211,11 +261,30 @@ export default {
     const studentPastApps = ref([]);
     const loadingStudentApps = ref(false);
     
+    // Bulk Selection State
+    const selectedApplicants = ref([]);
+    const isAllSelected = computed(() => {
+      return filteredApplications.value.length > 0 && 
+             selectedApplicants.value.length === filteredApplications.value.length;
+    });
+
+    const toggleSelectAll = (e) => {
+      if (e.target.checked) {
+        selectedApplicants.value = filteredApplications.value.map(a => a.id);
+      } else {
+        selectedApplicants.value = [];
+      }
+    };
+    
     // Status Modal State
     let statusModalInstance = null;
     const statusUpdateApp = ref(null);
     const newStatus = ref('');
     const statusFeedback = ref('');
+    const statusInterviewDate = ref('');
+    const statusInterviewLink = ref('');
+    const statusTestDate = ref('');
+    const statusTestLink = ref('');
     const isUpdatingStatus = ref(false);
     let modalInstance = null;
     
@@ -267,6 +336,12 @@ export default {
       newStatus.value = status;
       statusFeedback.value = app.feedback || '';
       
+      // Reset fields
+      statusInterviewDate.value = '';
+      statusInterviewLink.value = '';
+      statusTestDate.value = '';
+      statusTestLink.value = '';
+      
       if (!statusModalInstance && window.bootstrap) {
         statusModalInstance = new window.bootstrap.Modal(document.getElementById('statusFeedbackModal'));
       }
@@ -276,7 +351,20 @@ export default {
     const confirmUpdateStatus = async () => {
       if (!statusUpdateApp.value) return;
       isUpdatingStatus.value = true;
-      let payload = { status: newStatus.value, feedback: statusFeedback.value };
+      let payload = { 
+        status: newStatus.value, 
+        feedback: statusFeedback.value,
+        custom_message: statusFeedback.value
+      };
+
+      if (newStatus.value === 'interview') {
+         if (statusInterviewDate.value) payload.interview_scheduled = new Date(statusInterviewDate.value).toISOString();
+         payload.interview_link = statusInterviewLink.value;
+      }
+      if (newStatus.value === 'test_invited') {
+         if (statusTestDate.value) payload.test_scheduled = new Date(statusTestDate.value).toISOString();
+         payload.test_link = statusTestLink.value;
+      }
 
       try {
         await axios.put(`/api/company/applications/${statusUpdateApp.value.id}/status`, payload);
@@ -313,12 +401,57 @@ export default {
 
     onMounted(loadApps);
 
+    };
+
+    const openBulkStatusModal = async (status) => {
+      if (!selectedApplicants.value.length) return;
+      let msg = `Are you sure you want to mark ${selectedApplicants.value.length} applicants as ${status}?`;
+      let notifyAdmin = false;
+      
+      if (status === 'shortlisted') {
+        msg += "\n\nWould you also like to notify the admin about this shortlist update?";
+        notifyAdmin = confirm(msg); // First confirm includes admin notify option if they say yes to admin
+        if (!notifyAdmin) {
+           if (!confirm(`Mark as ${status} without notifying admin?`)) return;
+        }
+      } else {
+        if (!confirm(msg)) return;
+      }
+      
+      try {
+        await axios.put('/api/company/applications/bulk-status', {
+          application_ids: selectedApplicants.value,
+          status: status,
+          notify_admin: notifyAdmin
+        });
+        proxy.$toast(`Successfully marked as ${status}.`, 'success');
+        selectedApplicants.value = [];
+        loadApps();
+      } catch (err) {
+        proxy.$toast(err.response?.data?.error || 'Failed to update applications.', 'error');
+      }
+    };
+    
+    const openTestLinkModal = () => {
+      proxy.$toast('Select applicants individually to send distinct test links, or shortlist them first.', 'info');
+    };
+    
+    const openInterviewModal = () => {
+      proxy.$toast('Select applicants individually to schedule interviews.', 'info');
+    };
+
     return { 
       applications, 
       loading, 
       searchQuery,
       statusFilter,
       filteredApplications,
+      selectedApplicants,
+      isAllSelected,
+      toggleSelectAll,
+      openBulkStatusModal,
+      openTestLinkModal,
+      openInterviewModal,
       isGeneralView,
       formatDate,
       reviewStudent,
@@ -330,6 +463,10 @@ export default {
       statusUpdateApp,
       newStatus,
       statusFeedback,
+      statusInterviewDate,
+      statusInterviewLink,
+      statusTestDate,
+      statusTestLink,
       isUpdatingStatus
     };
   }

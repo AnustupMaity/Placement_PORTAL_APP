@@ -40,7 +40,7 @@ def make_celery(app): # celery app make
         app.import_name,
         broker=broker_url,
         backend=result_backend,
-        include=['tasks.reminders', 'tasks.reports']
+        include=['tasks.reminders', 'tasks.reports', 'tasks.emails']
     )
 
     conf_dict = {

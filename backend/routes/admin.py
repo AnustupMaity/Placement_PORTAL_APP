@@ -55,14 +55,106 @@ def admin_analytics():
     companies_by_status = db.session.query(CompanyProfile.approval_status, func.count(CompanyProfile.id)).group_by(CompanyProfile.approval_status).all()
     company_stats = {status: count for status, count in companies_by_status}
 
+    # Chart Data: Placements by Branch
+    from models.placement import Placement
+    placements_by_branch = (
+        db.session.query(StudentProfile.branch, func.count(Placement.id))
+        .join(Placement, StudentProfile.id == Placement.student_id)
+        .group_by(StudentProfile.branch)
+        .all()
+    )
+    branch_labels = [row[0] for row in placements_by_branch if row[0]]
+    branch_data = [row[1] for row in placements_by_branch if row[0]]
+
+    # Chart Data: Top Recruiters
+    top_recruiters = (
+        db.session.query(CompanyProfile.company_name, func.count(Placement.id).label('hires'))
+        .join(Placement, CompanyProfile.id == Placement.company_id)
+        .group_by(CompanyProfile.company_name)
+        .order_by(db.desc('hires'))
+        .limit(5)
+        .all()
+    )
+    recruiter_labels = [row[0] for row in top_recruiters]
+    recruiter_data = [row[1] for row in top_recruiters]
+
+    # Chart Data: Salary trends (by year/drive) - simplified to avg salary per company
+    salary_trends_raw = (
+        db.session.query(CompanyProfile.company_name, PlacementDrive.salary)
+        .join(PlacementDrive, CompanyProfile.id == PlacementDrive.company_id)
+        .all()
+    )
+    # Process in python for DB compatibility
+    company_salaries = {}
+    for comp, sal_str in salary_trends_raw:
+        if not sal_str: continue
+        try:
+            val = float(sal_str)
+            if val > 0:
+                if comp not in company_salaries:
+                    company_salaries[comp] = []
+                company_salaries[comp].append(val)
+        except (ValueError, TypeError):
+            pass
+
+    parsed_salaries = []
+    salary_labels = []
+    for comp, salaries in company_salaries.items():
+        if len(salaries) > 0:
+            avg_sal = sum(salaries) / len(salaries)
+            salary_labels.append(comp)
+            parsed_salaries.append(round(avg_sal, 2))
+
     data = {
         'applications': app_stats,
         'drives': drive_stats,
-        'companies': company_stats
+        'companies': company_stats,
+        'charts': {
+            'placements_by_branch': {
+                'labels': branch_labels,
+                'data': branch_data
+            },
+            'top_recruiters': {
+                'labels': recruiter_labels,
+                'data': recruiter_data
+            },
+            'salary_trends': {
+                'labels': salary_labels,
+                'data': parsed_salaries
+            }
+        }
     }
 
-    cache_set('admin:analytics', data, expiry=60)#cache setter
+    cache_set('admin:analytics', data, expiry=60)#CACHE SET TO 60
     return jsonify(data), 200
+
+@admin_bp.route('/api/admin/profile', methods=['GET'])
+@token_required
+@role_required('admin')
+def get_profile():
+    user = User.query.get(g.current_user.id)
+    return jsonify({
+        'institute_name': user.institute_name,
+        'institute_address': user.institute_address,
+        'institute_logo_url': user.institute_logo_url
+    }), 200
+
+@admin_bp.route('/api/admin/profile', methods=['PUT'])
+@token_required
+@role_required('admin')
+def update_profile():
+    user = User.query.get(g.current_user.id)
+    data = request.get_json(silent=True) or {}
+    
+    if 'institute_name' in data:
+        user.institute_name = data['institute_name']
+    if 'institute_address' in data:
+        user.institute_address = data['institute_address']
+    if 'institute_logo_url' in data:
+        user.institute_logo_url = data['institute_logo_url']
+        
+    db.session.commit()
+    return jsonify({'message': 'Profile updated successfully'}), 200
 
 
 @admin_bp.route('/api/admin/companies', methods=['GET'])#admin comapny page

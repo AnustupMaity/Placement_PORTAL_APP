@@ -21,6 +21,9 @@ if (!window.PPA) {
     { path: '/admin/drives', component: () => load('AdminDrives.vue'), name: 'AdminDrives', meta: { requiresAuth: true, role: 'admin' } },
     { path: '/admin/applications', component: () => load('AdminApplications.vue'), name: 'AdminApplications', meta: { requiresAuth: true, role: 'admin' } },
     { path: '/admin/placements', component: () => load('AdminPlacements.vue'), name: 'AdminPlacements', meta: { requiresAuth: true, role: 'admin' } },
+    { path: '/admin/community', component: () => load('CommunityBoard.vue'), name: 'AdminCommunity', meta: { requiresAuth: true, role: 'admin' } },
+    { path: '/admin/messages', component: () => load('Messages.vue'), name: 'AdminMessages', meta: { requiresAuth: true, role: 'admin' } },
+    { path: '/admin/profile', component: () => load('AdminProfile.vue'), name: 'AdminProfile', meta: { requiresAuth: true, role: 'admin' } },
 
     // company 
     { path: '/company', component: () => load('CompanyDashboard.vue'), name: 'CompanyDashboard', meta: { requiresAuth: true, role: 'company' } },
@@ -30,6 +33,8 @@ if (!window.PPA) {
     { path: '/company/applications', component: () => load('CompanyApplications.vue'), name: 'CompanyApplicationsGeneral', meta: { requiresAuth: true, role: 'company' } },
     { path: '/company/profile', component: () => load('CompanyProfile.vue'), name: 'CompanyProfile', meta: { requiresAuth: true, role: 'company' } },
     { path: '/company/placements', component: () => load('CompanyPlacements.vue'), name: 'CompanyPlacements', meta: { requiresAuth: true, role: 'company' } },
+    { path: '/company/community', component: () => load('CommunityBoard.vue'), name: 'CompanyCommunity', meta: { requiresAuth: true, role: 'company' } },
+    { path: '/company/messages', component: () => load('Messages.vue'), name: 'CompanyMessages', meta: { requiresAuth: true, role: 'company' } },
 
     // student
     { path: '/student', component: () => load('StudentDashboard.vue'), name: 'StudentDashboard', meta: { requiresAuth: true, role: 'student' } },
@@ -39,6 +44,8 @@ if (!window.PPA) {
     { path: '/student/applications', component: () => load('StudentApplications.vue'), name: 'StudentApplications', meta: { requiresAuth: true, role: 'student' } },
     { path: '/student/profile', component: () => load('StudentProfile.vue'), name: 'StudentProfile', meta: { requiresAuth: true, role: 'student' } },
     { path: '/student/history', component: () => load('StudentHistory.vue'), name: 'StudentHistory', meta: { requiresAuth: true, role: 'student' } },
+    { path: '/student/community', component: () => load('CommunityBoard.vue'), name: 'StudentCommunity', meta: { requiresAuth: true, role: 'student' } },
+    { path: '/student/messages', component: () => load('Messages.vue'), name: 'StudentMessages', meta: { requiresAuth: true, role: 'student' } },
 
     // if any other go to login
     { path: '/:pathMatch(.*)*', redirect: '/login' },
